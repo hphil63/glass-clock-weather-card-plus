@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/ironblaster/glass-clock-weather-card/main/images/banner.png" alt="Casa Futura"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/hphil63/glass-clock-weather-card-plus/main/images/banner.png" alt="Glass Clock Weather Card Plus"></p>
 
 # Glass Clock Weather Card Plus
 
@@ -8,20 +8,21 @@
 
 Fork of [ironblaster/glass-clock-weather-card](https://github.com/ironblaster/glass-clock-weather-card) — extended with a compact **today day-parts forecast row** above the clock (`Morgens / Mittags / Abends / Nachts`), optional detailed weather metrics, **fullscreen wall-tablet mode**, and German UI translations.
 
-A big, glanceable clock for Home Assistant dashboards and wall tablets. It shows animated weather icons, the current conditions, the indoor temperature, the next days and today's calendar events (perfect for waste collection), in a liquid glass style.
+A big, glanceable clock for Home Assistant dashboards and wall tablets. It shows animated weather icons, today's day-parts forecast, the current conditions, the indoor temperature, the next days and today's calendar events (perfect for waste collection), in a liquid glass style.
 
 Everything can be set from the visual editor: weather source, a place on the map for the forecast, colors, fonts, text size and actions.
 
-![Glass Clock Weather Card](https://raw.githubusercontent.com/ironblaster/glass-clock-weather-card/main/images/preview.png)
+![Glass Clock Weather Card Plus](https://raw.githubusercontent.com/hphil63/glass-clock-weather-card-plus/main/images/preview.jpg)
 
-| Light style (Italian) | Compact |
+| Light style | Compact |
 | --- | --- |
-| ![Light style](https://raw.githubusercontent.com/ironblaster/glass-clock-weather-card/main/images/preview-light.png) | ![Compact](https://raw.githubusercontent.com/ironblaster/glass-clock-weather-card/main/images/preview-compact.png) |
-
-🇮🇹 [Leggi in italiano](README.it.md)
+| ![Light style](https://raw.githubusercontent.com/hphil63/glass-clock-weather-card-plus/main/images/preview-light.png) | ![Compact](https://raw.githubusercontent.com/hphil63/glass-clock-weather-card-plus/main/images/preview-compact.png) |
 
 ## Features
 
+- **Today's day-parts forecast row above the clock** *(Plus)*: compact view of the remaining periods of today (`Morning / Afternoon / Evening / Night`) with animated weather icons and high/low temperatures, powered by hourly forecasts (or Met.no). Optional detailed mode (`today_forecast_details`) adds condition text, rain %, wind direction & speed, feels-like temperature, humidity and air pressure.
+- **Fullscreen wall-tablet mode** *(Plus)*: `fullscreen: true` stretches the card edge-to-edge to full viewport height without scrollbars — ideal for a `Panel (1 card)` dashboard view.
+- **Side-by-side HACS install** *(Plus)*: uses its own card type (`custom:glass-clock-weather-card-plus`) and filename (`glass-clock-weather-card-plus.js`), so it never conflicts with the original card.
 - **A huge clock** that fills the free space, with date, greeting and a seconds bar. 24 or 12 hours, following your profile.
 - **Hand-drawn animated weather icons**: sun, clouds, rain, storm, snow, sleet, hail, fog, wind, clear night.
 - **Weather from any weather entity**, or **from Met.no for any place you pick on a map**, without installing any integration.
@@ -73,12 +74,15 @@ location:
 location_name: Rome
 ```
 
-### Wall tablet
+### Wall tablet (Panel view / Fullscreen)
 
 ```yaml
 type: custom:glass-clock-weather-card-plus
 weather_entity: weather.home
 complete_forecast: true
+show_today_forecast: true
+today_forecast_details: false
+fullscreen: true
 temperature_entity: sensor.garden_temperature
 indoor_temperature_entity: sensor.living_room_temperature
 calendar_entity: calendar.waste_collection
@@ -91,8 +95,7 @@ calendar_types:
     label: Plastic
     icon: mdi:bottle-soda-classic-outline
     color: [255, 198, 64]
-text_scale: 1.2
-min_height: 520
+text_scale: 1.15
 tap_action:
   action: navigate
   navigation_path: /dashboard-weather/forecast
@@ -173,17 +176,10 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000/demo/index.html`. Useful parameters: `w=860,380` (card widths), `lang=it`, `theme=light`, `time=10:24` (fixed time for screenshots), `config={"weather_source":"met_no"}`.
 
-## Support
+## Credits & Upstream
 
-If Casa Futura makes your home a little nicer, you can [sponsor the project on GitHub](https://github.com/sponsors/ironblaster). Thank you!
-
-## The Casa Futura family
-
-- [Glass Clock Weather Card](https://github.com/ironblaster/glass-clock-weather-card): a big clock with animated weather.
-- [Casa Futura Cards](https://github.com/ironblaster/casa-futura-cards): gauge, alerts bell and action buttons with PIN.
-- [Casa Futura Theme](https://github.com/ironblaster/casa-futura-theme): the dark liquid glass theme.
-- [Casa Futura Kiosk](https://github.com/ironblaster/casa-futura-kiosk): status bar color, zoom and return home for wall tablets.
+Based on [Glass Clock Weather Card](https://github.com/ironblaster/glass-clock-weather-card) by **ironblaster** (part of the Casa Futura family). Weather data from [MET Norway](https://api.met.no/).
 
 ## License
 
-[MIT](LICENSE) © 2026 ironblaster. Weather icons drawn for this card. Weather data from [MET Norway](https://api.met.no/).
+[MIT](LICENSE) © 2026 ironblaster, hphil63. Weather icons drawn for this card. Weather data from [MET Norway](https://api.met.no/).

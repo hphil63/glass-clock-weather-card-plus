@@ -90,12 +90,16 @@ const hass = {
   },
   callApi: (method, path) => Promise.resolve(lang === 'it'
     ? [{ summary: 'Raccolta Plastica', start: { date: ymd(day(0)) }, end: { date: ymd(day(1)) } }, { summary: 'Carta e cartone', start: { date: ymd(day(1)) }, end: { date: ymd(day(2)) } }]
-    : [{ summary: 'Plastic collection', start: { date: ymd(day(0)) }, end: { date: ymd(day(1)) } }, { summary: 'Paper', start: { date: ymd(day(1)) }, end: { date: ymd(day(2)) } }])
+    : lang.startsWith('de')
+      ? [{ summary: 'Gelber Sack', start: { date: ymd(day(0)) }, end: { date: ymd(day(1)) } }, { summary: 'Altpapier', start: { date: ymd(day(1)) }, end: { date: ymd(day(2)) } }]
+      : [{ summary: 'Plastic collection', start: { date: ymd(day(0)) }, end: { date: ymd(day(1)) } }, { summary: 'Paper', start: { date: ymd(day(1)) }, end: { date: ymd(day(2)) } }])
 };
 
 const types = lang === 'it'
   ? [{ pattern: 'Plastica', label: 'Plastica', icon: 'mdi:bottle-soda-classic-outline', color: [255, 198, 64] }, { pattern: 'Carta', label: 'Carta', icon: 'mdi:newspaper-variant-outline', color: [96, 165, 250] }]
-  : [{ pattern: 'Plastic', label: 'Plastic', icon: 'mdi:bottle-soda-classic-outline', color: [255, 198, 64] }, { pattern: 'Paper', label: 'Paper', icon: 'mdi:newspaper-variant-outline', color: [96, 165, 250] }];
+  : lang.startsWith('de')
+    ? [{ pattern: 'Gelber Sack|Kunststoff', label: 'Gelber Sack', icon: 'mdi:bottle-soda-classic-outline', color: [255, 198, 64] }, { pattern: 'Papier|Altpapier', label: 'Papier', icon: 'mdi:newspaper-variant-outline', color: [96, 165, 250] }]
+    : [{ pattern: 'Plastic', label: 'Plastic', icon: 'mdi:bottle-soda-classic-outline', color: [255, 198, 64] }, { pattern: 'Paper', label: 'Paper', icon: 'mdi:newspaper-variant-outline', color: [96, 165, 250] }];
 
 const base = {
   type: 'custom:glass-clock-weather-card-plus', weather_source: 'entity', weather_entity: 'weather.home',
