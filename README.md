@@ -3,8 +3,10 @@
 # Glass Clock Weather Card Plus
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories)
-[![GitHub release](https://img.shields.io/github/v/release/ironblaster/glass-clock-weather-card)](https://github.com/ironblaster/glass-clock-weather-card/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ff69b4)](https://github.com/sponsors/ironblaster)
+[![GitHub release](https://img.shields.io/github/v/release/hphil63/glass-clock-weather-card-plus)](https://github.com/hphil63/glass-clock-weather-card-plus/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+Fork of [ironblaster/glass-clock-weather-card](https://github.com/ironblaster/glass-clock-weather-card) — extended with a compact **today day-parts forecast row** above the clock (`Morgens / Mittags / Abends / Nachts`), optional detailed weather metrics, **fullscreen wall-tablet mode**, and German UI translations.
 
 A big, glanceable clock for Home Assistant dashboards and wall tablets. It shows animated weather icons, the current conditions, the indoor temperature, the next days and today's calendar events (perfect for waste collection), in a liquid glass style.
 
@@ -38,13 +40,13 @@ Everything can be set from the visual editor: weather source, a place on the map
 ### HACS
 
 1. In HACS open the menu (⋮) → **Custom repositories**.
-2. Add `https://github.com/ironblaster/glass-clock-weather-card` with type **Dashboard**.
+2. Add `https://github.com/hphil63/glass-clock-weather-card-plus` with type **Dashboard**.
 3. Install **Glass Clock Weather Card Plus** and reload the browser.
 
 ### Manual
 
-1. Download `glass-clock-weather-card.js` from the [latest release](https://github.com/ironblaster/glass-clock-weather-card/releases) and copy it to `config/www/`.
-2. In **Settings → Dashboards → ⋮ → Resources** add `/local/glass-clock-weather-card.js?v=1.0.2` as a **JavaScript module**.
+1. Download `glass-clock-weather-card-plus.js` from the [latest release](https://github.com/hphil63/glass-clock-weather-card-plus/releases) and copy it to `config/www/`.
+2. In **Settings → Dashboards → ⋮ → Resources** add `/local/glass-clock-weather-card-plus.js?v=1.1.0` as a **JavaScript module**.
 3. Reload the browser.
 
 Home Assistant lets browsers cache files in `/local` for a long time: when you update the file by hand, change the `?v=` number too. HACS does this for you.
@@ -56,14 +58,14 @@ Add the card from the dashboard editor (**Glass Clock Weather Card Plus**) and s
 ### Minimal
 
 ```yaml
-type: custom:glass-clock-weather-card
+type: custom:glass-clock-weather-card-plus
 weather_entity: weather.home
 ```
 
 ### Met.no for a place of your choice
 
 ```yaml
-type: custom:glass-clock-weather-card
+type: custom:glass-clock-weather-card-plus
 weather_source: met_no
 location:
   latitude: 41.9028
@@ -74,7 +76,7 @@ location_name: Rome
 ### Wall tablet
 
 ```yaml
-type: custom:glass-clock-weather-card
+type: custom:glass-clock-weather-card-plus
 weather_entity: weather.home
 complete_forecast: true
 temperature_entity: sensor.garden_temperature
@@ -111,6 +113,8 @@ tap_action:
 | `indoor_label` | text | `Indoor`, translated | Caption under the indoor temperature. |
 | `show_details` | boolean | `true` | Today's high and low, humidity and wind. |
 | `temperature_decimals` | `0`–`2` | `1` | Decimals of the big temperatures. |
+| `show_today_forecast` | boolean | `true` | Compact day-parts forecast row for today (`Morning / Afternoon / Evening / Night`) above the clock. |
+| `today_forecast_details` | boolean | `false` | Show extra details in today's day-parts row (condition, rain %, wind, feels like, humidity, pressure). |
 | `show_forecast` | boolean | `true` | Show the next days. |
 | `forecast_days` | `1`–`7` | `7` | Maximum number of days. Only the days that fit are shown. |
 | `time_format` | `auto`, `24`, `12` | `auto` | `auto` follows your Home Assistant profile. |
@@ -128,7 +132,8 @@ tap_action:
 | `font` | `space_grotesk`, `theme`, `custom` | `space_grotesk` | |
 | `font_family` | text | | Font name, used with `font: custom`. |
 | `text_scale` | `0.6`–`1.8` | `1` | Makes every text bigger or smaller. |
-| `min_height` | pixels | `420` | Minimum height. In a sections view the grid sets the height instead. |
+| `fullscreen` | boolean | `false` | Stretch the card edge-to-edge to full viewport height (`Panel (1 card)` view / wall tablets). |
+| `min_height` | pixels | `420` | Minimum height. Ignored when `fullscreen: true` or in a sections view. |
 | `glass` | boolean | `true` | Glass background with blur. Off: the normal card background of your theme. |
 | `glow` | `0`–`1` | `0.5` | Glow of the clock and of the seconds bar. |
 | `border_radius` | pixels | `32` | |

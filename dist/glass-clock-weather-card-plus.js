@@ -1,18 +1,19 @@
 /*!
- * Glass Clock Weather Card for Home Assistant
- * A big, glanceable clock with animated weather icons, daily forecast,
- * indoor temperature and calendar chips, in a liquid glass style.
+ * Glass Clock Weather Card Plus for Home Assistant
+ * Fork of Glass Clock Weather Card (https://github.com/ironblaster/glass-clock-weather-card)
+ * with a compact today day-parts forecast row above the clock, fullscreen wall-tablet mode,
+ * and German UI translations.
  *
- * https://github.com/ironblaster/glass-clock-weather-card
+ * https://github.com/hphil63/glass-clock-weather-card-plus
  * Released under the MIT License.
  */
 (function () {
   'use strict';
 
-  var CARD = 'glass-clock-weather-card';
+  var CARD = 'glass-clock-weather-card-plus';
   var EDITOR = CARD + '-editor';
-  var VERSION = '1.0.2';
-  var REPO = 'https://github.com/ironblaster/glass-clock-weather-card';
+  var VERSION = '1.1.0';
+  var REPO = 'https://github.com/hphil63/glass-clock-weather-card-plus';
   if (customElements.get(CARD)) return;
 
   /* ================================================================ helpers */
@@ -68,6 +69,8 @@
     en: {
       night: 'Good night', morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', noon: 12,
       indoor: 'Indoor', today: 'Today', tomorrow: 'Tomorrow', loading: 'Loading forecast…', nofc: 'Forecast not available',
+      p_morning: 'Morning', p_midday: 'Afternoon', p_evening: 'Evening', p_night: 'Night', p_u: '', feels: 'Feels like',
+      dirs: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
       cond: {
         'clear-night': 'Clear night', cloudy: 'Cloudy', exceptional: 'Exceptional', fog: 'Fog', hail: 'Hail', lightning: 'Lightning',
         'lightning-rainy': 'Thunderstorm', partlycloudy: 'Partly cloudy', pouring: 'Heavy rain', rainy: 'Rain', snowy: 'Snow',
@@ -77,16 +80,43 @@
     it: {
       night: 'Buonanotte', morning: 'Buongiorno', afternoon: 'Buon pomeriggio', evening: 'Buonasera', noon: 13,
       indoor: 'In casa', today: 'Oggi', tomorrow: 'Domani', loading: 'Carico le previsioni…', nofc: 'Previsioni non disponibili',
+      p_morning: 'Mattina', p_midday: 'Pomeriggio', p_evening: 'Sera', p_night: 'Notte', p_u: '', feels: 'Percepita',
+      dirs: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'],
       cond: {
         'clear-night': 'Sereno', cloudy: 'Nuvoloso', exceptional: 'Eccezionale', fog: 'Nebbia', hail: 'Grandine', lightning: 'Fulmini',
         'lightning-rainy': 'Temporale', partlycloudy: 'Parzialmente nuvoloso', pouring: 'Pioggia intensa', rainy: 'Pioggia', snowy: 'Neve',
         'snowy-rainy': 'Pioggia e neve', sunny: 'Soleggiato', windy: 'Ventoso', 'windy-variant': 'Ventoso e nuvoloso'
       }
     },
-    de: { night: 'Gute Nacht', morning: 'Guten Morgen', afternoon: 'Guten Tag', evening: 'Guten Abend', indoor: 'Innen', today: 'Heute', tomorrow: 'Morgen', loading: 'Vorhersage wird geladen…', nofc: 'Keine Vorhersage verfügbar' },
-    fr: { night: 'Bonne nuit', morning: 'Bonjour', afternoon: 'Bon après-midi', evening: 'Bonsoir', indoor: 'Intérieur', today: "Aujourd'hui", tomorrow: 'Demain', loading: 'Chargement des prévisions…', nofc: 'Prévisions indisponibles' },
-    es: { night: 'Buenas noches', morning: 'Buenos días', afternoon: 'Buenas tardes', evening: 'Buenas tardes', indoor: 'Interior', today: 'Hoy', tomorrow: 'Mañana', loading: 'Cargando la previsión…', nofc: 'Previsión no disponible' },
-    nl: { night: 'Goedenacht', morning: 'Goedemorgen', afternoon: 'Goedemiddag', evening: 'Goedenavond', indoor: 'Binnen', today: 'Vandaag', tomorrow: 'Morgen', loading: 'Verwachting laden…', nofc: 'Geen verwachting beschikbaar' }
+    de: {
+      night: 'Gute Nacht', morning: 'Guten Morgen', afternoon: 'Guten Tag', evening: 'Guten Abend',
+      indoor: 'Innen', today: 'Heute', tomorrow: 'Morgen', loading: 'Vorhersage wird geladen…', nofc: 'Keine Vorhersage verfügbar',
+      p_morning: 'Morgens', p_midday: 'Mittags', p_evening: 'Abends', p_night: 'Nachts', p_u: ' Uhr', feels: 'gefühlt',
+      dirs: ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'],
+      cond: {
+        'clear-night': 'Klar', cloudy: 'Bewölkt', exceptional: 'Außergewöhnlich', fog: 'Nebel', hail: 'Hagel', lightning: 'Gewitter',
+        'lightning-rainy': 'Gewitter mit Regen', partlycloudy: 'Wechselnd bewölkt', pouring: 'Starkregen', rainy: 'Regen', snowy: 'Schnee',
+        'snowy-rainy': 'Schneeregen', sunny: 'Sonnig', windy: 'Windig', 'windy-variant': 'Windig & bewölkt'
+      }
+    },
+    fr: {
+      night: 'Bonne nuit', morning: 'Bonjour', afternoon: 'Bon après-midi', evening: 'Bonsoir',
+      indoor: 'Intérieur', today: "Aujourd'hui", tomorrow: 'Demain', loading: 'Chargement des prévisions…', nofc: 'Prévisions indisponibles',
+      p_morning: 'Matin', p_midday: 'Midi', p_evening: 'Soir', p_night: 'Nuit', p_u: 'h', feels: 'Ressenti',
+      dirs: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO']
+    },
+    es: {
+      night: 'Buenas noches', morning: 'Buenos días', afternoon: 'Buenas tardes', evening: 'Buenas tardes',
+      indoor: 'Interior', today: 'Hoy', tomorrow: 'Mañana', loading: 'Cargando la previsión…', nofc: 'Previsión no disponible',
+      p_morning: 'Mañana', p_midday: 'Mediodía', p_evening: 'Tarde', p_night: 'Noche', p_u: 'h', feels: 'Sensación',
+      dirs: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO']
+    },
+    nl: {
+      night: 'Goedenacht', morning: 'Goedemorgen', afternoon: 'Goedemiddag', evening: 'Goedenavond',
+      indoor: 'Binnen', today: 'Vandaag', tomorrow: 'Morgen', loading: 'Verwachting laden…', nofc: 'Geen verwachting beschikbaar',
+      p_morning: 'Ochtend', p_midday: 'Middag', p_evening: 'Avond', p_night: 'Nacht', p_u: 'u', feels: 'Gevoel',
+      dirs: ['N', 'NO', 'O', 'ZO', 'Z', 'ZW', 'W', 'NW']
+    }
   };
   function tr(l, k) { var t = T[baseLang(l)] || T.en; return t[k] != null ? t[k] : T.en[k]; }
   function condLabel(hass, cond) {
@@ -254,6 +284,120 @@
       return o.hi == null ? null : { datetime: o.datetime, condition: o.cond || 'cloudy', temperature: o.hi, templow: o.lo };
     }).filter(Boolean);
   }
+  function bearingToDeg(b) {
+    if (b == null) return null;
+    if (typeof b === 'number' && !isNaN(b)) return ((b % 360) + 360) % 360;
+    var n = parseFloat(b);
+    if (!isNaN(n)) return ((n % 360) + 360) % 360;
+    var map = { N: 0, NNE: 22.5, NE: 45, NO: 45, ENE: 67.5, ONO: 67.5, E: 90, O: 90, ESE: 112.5, OSO: 112.5, SE: 135, SO: 135, SSE: 157.5, SSO: 157.5, S: 180, SSW: 202.5, SW: 225, WSW: 247.5, W: 270, WNW: 292.5, NW: 315, NNW: 337.5 };
+    var k = String(b).trim().toUpperCase();
+    return k in map ? map[k] : null;
+  }
+  function compassDir(deg, l) {
+    if (deg == null) return '';
+    var dirs = tr(l, 'dirs') || T.en.dirs;
+    return dirs[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+  }
+  function windToKmh(v, unit) {
+    if (v == null) return null;
+    var u = String(unit || '').toLowerCase();
+    if (u === 'm/s' || u === 'mps') return v * 3.6;
+    if (u === 'mph') return v * 1.60934;
+    if (u === 'kn' || u === 'kt') return v * 1.852;
+    return v;
+  }
+  // apparent temperature in °C (wind chill for cold, heat index for hot, Steadman otherwise)
+  function calcFeelsLikeC(tC, hum, windKmh) {
+    if (tC == null) return null;
+    var v = windKmh != null ? windKmh : 0;
+    if (tC <= 10) {
+      if (v < 4.8) return tC;
+      var vp = Math.pow(v, 0.16);
+      return 13.12 + 0.6215 * tC - 11.37 * vp + 0.3965 * tC * vp;
+    }
+    if (tC >= 27 && hum != null && hum >= 40) {
+      var tF = tC * 9 / 5 + 32, r = hum;
+      var hi = -42.379 + 2.04901523 * tF + 10.14333127 * r - 0.22475541 * tF * r - 0.00683783 * tF * tF
+        - 0.05481717 * r * r + 0.00122874 * tF * tF * r + 0.00085282 * tF * r * r - 0.00000199 * tF * tF * r * r;
+      return (hi - 32) * 5 / 9;
+    }
+    if (hum != null) {
+      var e = (hum / 100) * 6.105 * Math.exp(17.27 * tC / (237.7 + tC));
+      return tC + 0.33 * e - 0.70 * (v / 3.6) - 4.0;
+    }
+    return tC;
+  }
+  var COND_SEV = { 'lightning-rainy': 9, lightning: 8, hail: 7, pouring: 6, 'snowy-rainy': 5, snowy: 5, rainy: 4, fog: 3, windy: 2, 'windy-variant': 2, cloudy: 1, partlycloudy: 0, sunny: 0, 'clear-night': 0 };
+  function groupTodayParts(list, now, unit, windUnit, pressUnit) {
+    if (!list || !list.length) return [];
+    var y = now.getFullYear(), m = now.getMonth(), d = now.getDate(), h = now.getHours(), nowMs = now.getTime();
+    var mk = function (hh, dayOff) { return new Date(y, m, d + (dayOff || 0), hh, 0, 0, 0).getTime(); };
+    var defs = h < 6 ? [
+      { key: 'p_night', range: '00–06', start: mk(0), end: mk(6), night: true },
+      { key: 'p_morning', range: '06–12', start: mk(6), end: mk(12), night: false },
+      { key: 'p_midday', range: '12–18', start: mk(12), end: mk(18), night: false },
+      { key: 'p_evening', range: '18–22', start: mk(18), end: mk(22), night: false }
+    ] : [
+      { key: 'p_morning', range: '06–12', start: mk(6), end: mk(12), night: false },
+      { key: 'p_midday', range: '12–18', start: mk(12), end: mk(18), night: false },
+      { key: 'p_evening', range: '18–22', start: mk(18), end: mk(22), night: false },
+      { key: 'p_night', range: '22–06', start: mk(22), end: mk(6, 1), night: true }
+    ];
+    var isF = /F/i.test(unit || '');
+    var out = [];
+    defs.forEach(function (b) {
+      if (b.end <= nowMs) return;
+      var items = [];
+      for (var i = 0; i < list.length; i++) {
+        var f = list[i], ts = new Date(f.datetime).getTime();
+        if (ts >= b.start && ts < b.end) items.push({ f: f, ts: ts });
+      }
+      if (!items.length) return;
+      var hi = null, lo = null, fHi = null, fLo = null;
+      var pProb = null, pAmt = null, wSum = 0, wCnt = 0, sinSum = 0, cosSum = 0, bCnt = 0;
+      var hSum = 0, hCnt = 0, prSum = 0, prCnt = 0;
+      var mid = (b.start + b.end) / 2, bestCond = null, bestDist = 1e15, worstCond = null, worstSev = 0;
+      items.forEach(function (it) {
+        var f = it.f, t = num(f.temperature), tl = num(f.templow);
+        if (t != null) { hi = hi == null ? t : Math.max(hi, t); lo = lo == null ? t : Math.min(lo, t); }
+        if (tl != null) { lo = lo == null ? tl : Math.min(lo, tl); }
+        var hu = num(f.humidity), ws = num(f.wind_speed), at = num(f.apparent_temperature);
+        if (at == null && t != null) {
+          var tc = toC(t, unit), flc = calcFeelsLikeC(tc, hu, windToKmh(ws, windUnit));
+          if (flc != null) at = isF ? flc * 9 / 5 + 32 : flc;
+        }
+        if (at != null) { fHi = fHi == null ? at : Math.max(fHi, at); fLo = fLo == null ? at : Math.min(fLo, at); }
+        var pp = num(f.precipitation_probability), pa = num(f.precipitation);
+        if (pp != null) pProb = pProb == null ? pp : Math.max(pProb, pp);
+        if (pa != null) pAmt = (pAmt || 0) + pa;
+        if (ws != null) { wSum += ws; wCnt++; }
+        var deg = bearingToDeg(f.wind_bearing);
+        if (deg != null) { var rad = deg * Math.PI / 180; sinSum += Math.sin(rad); cosSum += Math.cos(rad); bCnt++; }
+        if (hu != null) { hSum += hu; hCnt++; }
+        var pr = num(f.pressure);
+        if (pr != null) { prSum += pr; prCnt++; }
+        if (f.condition) {
+          var dist = Math.abs(it.ts - mid);
+          if (dist < bestDist) { bestDist = dist; bestCond = f.condition; }
+          var sev = COND_SEV[f.condition] || 0;
+          if (sev >= 4 && sev > worstSev) { worstSev = sev; worstCond = f.condition; }
+        }
+      });
+      if (hi == null) return;
+      var wDeg = bCnt ? ((Math.atan2(sinSum / bCnt, cosSum / bCnt) * 180 / Math.PI) + 360) % 360 : null;
+      var cond = worstCond || bestCond || 'cloudy';
+      out.push({
+        key: b.key, range: b.range, night: b.night || cond === 'clear-night',
+        cond: cond, hi: hi, lo: lo != null ? lo : hi,
+        feelsHi: fHi, feelsLo: fLo != null ? fLo : fHi,
+        precipProb: pProb, precip: pAmt,
+        wind: wCnt ? wSum / wCnt : null, windUnit: windUnit || '', windDeg: wDeg,
+        hum: hCnt ? hSum / hCnt : null,
+        press: prCnt ? prSum / prCnt : null, pressUnit: pressUnit || 'hPa'
+      });
+    });
+    return out;
+  }
   // self-healing subscription: retries on error and subscribes again after a reconnection
   // (e.g. Home Assistant restarted and the weather integration was not ready yet)
   function subscribeForecast(hass, entity, type, cb) {
@@ -299,7 +443,7 @@
   function metParse(j) {
     var ts = (j && j.properties && j.properties.timeseries) || [];
     if (!ts.length) return null;
-    var now = Date.now(), cur = ts[0], days = {}, order = [];
+    var now = Date.now(), cur = ts[0], days = {}, order = [], hourly = [];
     for (var i = 0; i < ts.length; i++) { if (new Date(ts[i].time).getTime() <= now) cur = ts[i]; else break; }
     ts.forEach(function (e) {
       var d = new Date(e.time), k = dayKey(d), det = (e.data && e.data.instant && e.data.instant.details) || {};
@@ -309,12 +453,26 @@
       var sym = (n6 && n6.summary && n6.summary.symbol_code) || (n1 && n1.summary && n1.summary.symbol_code) || (n12 && n12.summary && n12.summary.symbol_code);
       var dist = Math.abs(d.getHours() - 12);
       if (sym && dist < o.dist) { o.sym = sym; o.dist = dist; }
+      if (d.getTime() >= now - 3600000 && d.getTime() <= now + 48 * 3600000) {
+        var hsym = (n1 && n1.summary && n1.summary.symbol_code) || (n6 && n6.summary && n6.summary.symbol_code) || sym;
+        var pDet = (n1 && n1.details) || (n6 && n6.details) || {};
+        hourly.push({
+          datetime: e.time, condition: metCond(hsym),
+          temperature: num(det.air_temperature),
+          humidity: num(det.relative_humidity),
+          pressure: num(det.air_pressure_at_sea_level),
+          wind_speed: num(det.wind_speed),
+          wind_bearing: num(det.wind_from_direction),
+          precipitation: num(pDet.precipitation_amount)
+        });
+      }
     });
     var det = (cur.data && cur.data.instant && cur.data.instant.details) || {};
     var c1 = cur.data.next_1_hours, c6 = cur.data.next_6_hours;
     var sym = (c1 && c1.summary && c1.summary.symbol_code) || (c6 && c6.summary && c6.summary.symbol_code) || '';
     return {
       now: { condition: metCond(sym), night: /_night$/.test(sym), temperature: num(det.air_temperature), humidity: num(det.relative_humidity), wind: num(det.wind_speed) },
+      hourly: hourly,
       daily: order.map(function (k) {
         var o = days[k]; if (!o.t.length) return null;
         return { datetime: o.date.toISOString(), condition: metCond(o.sym), temperature: Math.max.apply(null, o.t), templow: Math.min.apply(null, o.t) };
@@ -403,11 +561,12 @@
   var DEF = {
     weather_source: null, weather_entity: null, location: null, location_name: '',
     temperature_entity: null, humidity_entity: null, indoor_temperature_entity: null, indoor_label: '',
-    show_details: true, temperature_decimals: 1, show_forecast: true, forecast_days: 7, complete_forecast: false,
+    show_details: true, temperature_decimals: 1, show_today_forecast: true, today_forecast_details: false,
+    show_forecast: true, forecast_days: 7, complete_forecast: false,
     time_format: 'auto', show_greeting: true, show_date: true, show_seconds_bar: true, clock_max_size: 320,
     calendar_entity: null, calendar_show_tomorrow: true, calendar_max_chips: 4, calendar_default_icon: 'mdi:calendar-star',
     calendar_default_color: null, calendar_types: [],
-    appearance: 'auto', font: 'space_grotesk', font_family: '', text_scale: 1, min_height: 420,
+    appearance: 'auto', font: 'space_grotesk', font_family: '', text_scale: 1, min_height: 420, fullscreen: false,
     accent_color: null, secondary_color: null, time_color: null, indoor_color: null, text_color: null,
     glass: true, background_color: null, background_opacity: 0.18, glow: 0.5, border_radius: 32,
     tap_action: null, hold_action: null, double_tap_action: null
@@ -435,6 +594,7 @@
     '  padding:calc(22px * var(--s)) calc(28px * var(--s)) calc(16px * var(--s));border-radius:var(--gcw-radius);color:rgb(var(--gcw-text));' +
     '  font-family:var(--gcw-font);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;transition:transform .15s;outline:none}' +
     'ha-card.gc.act{cursor:pointer}' +
+    'ha-card.gc.full{height:calc(100vh - var(--header-height,0px));min-height:calc(100vh - var(--header-height,0px));border-radius:0;border:0}' +
     'ha-card.gc.pressed{transform:scale(.99)}' +
     'ha-card.gc.glass{background:linear-gradient(155deg,rgba(255,255,255,.13) 0%,rgba(255,255,255,.05) 34%,rgba(255,255,255,.02) 60%,rgba(255,255,255,.085) 100%);' +
     '  -webkit-backdrop-filter:blur(34px) saturate(185%);backdrop-filter:blur(34px) saturate(185%);border:1px solid rgba(255,255,255,.15);' +
@@ -471,6 +631,26 @@
     '.wt small{font-size:.4em;opacity:.6;vertical-align:top;margin-left:3px}' +
     '.cap{font-size:calc(16px * var(--s));opacity:.75;margin-top:3px;white-space:nowrap;max-width:calc(260px * var(--s));overflow:hidden;text-overflow:ellipsis}' +
     '.wd{display:flex;gap:calc(6px * var(--s));justify-content:flex-end;flex-wrap:wrap;margin-top:calc(8px * var(--s))}' +
+    '.td{display:grid;flex:none;margin:calc(12px * var(--s)) 0 calc(4px * var(--s));padding:calc(8px * var(--s)) calc(4px * var(--s));' +
+    '  border-radius:calc(16px * var(--s));background:rgba(var(--gcw-text),.045);border:1px solid rgba(var(--gcw-text),.09)}' +
+    '.tdp{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(3px * var(--s));padding:calc(2px * var(--s)) calc(8px * var(--s));' +
+    '  border-left:1px solid rgba(var(--gcw-text),.08);min-width:0;overflow:hidden}' +
+    '.tdp:first-child{border-left:0}' +
+    '.tdh{display:flex;align-items:baseline;justify-content:center;gap:calc(6px * var(--s));max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.tdn{font-size:calc(15px * var(--s));font-weight:600;opacity:.9}' +
+    '.tdr{font-size:calc(12px * var(--s));opacity:.52;font-variant-numeric:tabular-nums}' +
+    '.tdm{display:flex;align-items:center;justify-content:center;gap:calc(8px * var(--s))}' +
+    '.tdi{width:calc(40px * var(--s));height:calc(40px * var(--s));flex:none}' +
+    '.tdt{display:flex;align-items:baseline;gap:calc(4px * var(--s));font-size:calc(22px * var(--s));font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}' +
+    '.tdt .hi{font-weight:600}.tdt .sl{font-size:.72em;opacity:.4}.tdt .lo{font-size:.78em;opacity:.6}' +
+    '.tdc{font-size:calc(12px * var(--s));opacity:.68;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}' +
+    '.tdd{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:calc(3px * var(--s)) calc(9px * var(--s));margin-top:calc(2px * var(--s));' +
+    '  font-size:calc(12px * var(--s));opacity:.8;font-variant-numeric:tabular-nums}' +
+    '.tdd span{display:inline-flex;align-items:center;gap:calc(3px * var(--s));white-space:nowrap}' +
+    '.tdd ha-icon{--mdc-icon-size:calc(13px * var(--s));width:calc(13px * var(--s));height:calc(13px * var(--s));display:inline-flex;opacity:.8}' +
+    '.tdd .heart ha-icon{color:#f05a65;opacity:.95}' +
+    '.tdd .wa{display:inline-block;width:calc(12px * var(--s));height:calc(12px * var(--s));flex:none}' +
+    '.gc.narrow .tdr{display:none}' +
     '.mid{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0}' +
     '.time{display:flex;align-items:baseline;justify-content:center;line-height:.84;font-weight:var(--gcw-tw);letter-spacing:-.055em;' +
     '  font-variant-numeric:tabular-nums;font-size:120px;white-space:nowrap;margin-right:.04em}' +
@@ -523,7 +703,8 @@
       c.forecast_days = clamp(parseInt(c.forecast_days, 10) || 7, 1, 7);
       this._config = c;
       this._stopData();
-      this._daily = null; this._met = null; this._cal = null; this._fkey = null; this._ckey = null;
+      this._daily = null; this._hourly = null; this._hourlyFromMet = false; this._met = null; this._cal = null;
+      this._fkey = null; this._tkey = null; this._ckey = null; this._lastHour = null;
       this._built = false;
       if (this._hass) this._build();
     }
@@ -565,7 +746,7 @@
     _build() {
       var c = this._config;
       if (c.font === 'space_grotesk') loadFont();
-      var wx = c.weather_source !== 'none', fc = wx && c.show_forecast !== false;
+      var wx = c.weather_source !== 'none', fc = wx && c.show_forecast !== false, td = wx && c.show_today_forecast !== false;
       this.shadowRoot.innerHTML = '<style>' + CSS + '</style>' +
         '<ha-card class="gc" id="card"><div class="tint" id="tint"></div>' +
         '<div class="top" id="top"><div class="tl"><div class="greet" id="greet"></div><div class="chips" id="chips"></div></div>' +
@@ -575,6 +756,7 @@
         '<div class="rd" id="rdi"><ha-icon class="hic" icon="mdi:home-thermometer-outline"></ha-icon>' +
         '<div class="rv"><div class="wt" id="wti">—</div><div class="cap" id="wil"></div></div></div>' +
         '</div><div class="wd" id="wd"></div></div></div>' +
+        (td ? '<div class="td" id="td" hidden></div>' : '') +
         '<div class="mid" id="mid"><div class="time" id="time"><span class="g" id="hh">--</span><span class="g col">:</span><span class="g" id="mm">--</span>' +
         '<span class="ap" id="ap"></span></div><div class="date" id="date"></div></div>' +
         '<div class="sec" id="secw"><i id="bar"></i></div>' +
@@ -616,6 +798,7 @@
       };
       for (var k in vars) card.style.setProperty(k, vars[k]);
       card.classList.toggle('glass', c.glass !== false);
+      card.classList.toggle('full', c.fullscreen === true);
       card.classList.toggle('light', mode === 'light');
       card.classList.toggle('noweather', c.weather_source === 'none' && !c.indoor_temperature_entity);
       var act = this._actionOf('tap') || this._actionOf('hold') || this._actionOf('double_tap');
@@ -663,7 +846,7 @@
       // in a sections grid (fixed height) the free space wins
       var floor = Math.min(max, w / (ratio * 1.75));
       var fs = Math.min(max, w / (ratio * 1.1), avail / 0.86);
-      fs = Math.max(36, this._layout === 'grid' ? fs : Math.max(fs, floor));
+      fs = Math.max(36, (this._layout === 'grid' || this._config.fullscreen === true) ? fs : Math.max(fs, floor));
       t.style.fontSize = Math.round(fs) + 'px';
     }
 
@@ -720,7 +903,9 @@
       clearInterval(this._t1); clearInterval(this._t2); this._t1 = this._t2 = null;
     }
     _stopData() {
-      unsubscribe(this._sub); this._sub = null; this._dataStarted = false;
+      unsubscribe(this._sub); this._sub = null;
+      unsubscribe(this._subH); this._subH = null;
+      this._dataStarted = false;
     }
     _location() {
       var l = this._config.location;
@@ -732,35 +917,49 @@
       if (!h || !this._built || this._dataStarted) return;
       this._dataStarted = true;
       if (c.weather_source === 'entity' && c.weather_entity) {
-        var type = forecastType(st(h, c.weather_entity));
+        var ws = st(h, c.weather_entity), type = forecastType(ws);
+        var feat = (ws && ws.attributes && ws.attributes.supported_features) || 0;
         this._sub = subscribeForecast(h, c.weather_entity, type, function (list) {
           self._daily = groupDaily(list, type);
+          if (type === 'hourly') {
+            self._hourly = list; self._hourlyFromMet = false;
+            self._tkey = null; self._renderToday();
+          }
           self._fkey = null; self._renderForecast(); self._weather(); self._complete();
         });
+        if (c.show_today_forecast !== false && type !== 'hourly' && (feat & 2)) {
+          this._subH = subscribeForecast(h, c.weather_entity, 'hourly', function (list) {
+            self._hourly = list; self._hourlyFromMet = false;
+            self._tkey = null; self._renderToday();
+          });
+        }
       }
       if (c.weather_source === 'met_no') this._loadMet();
       if (c.calendar_entity) this._loadCal();
     }
     _slow() {
-      var c = this._config, k = dayKey(new Date());
+      var c = this._config, now = new Date(), k = dayKey(now), hr = now.getHours();
       if (c.weather_source === 'met_no') this._loadMet();
       else if (this._usedMet) this._complete();
       if (c.calendar_entity) this._loadCal();
-      if (this._day && this._day !== k) { this._fkey = null; this._ckey = null; this._renderForecast(); this._update(); }
-      this._day = k;
+      if (this._day && this._day !== k) { this._fkey = null; this._tkey = null; this._ckey = null; this._renderForecast(); this._renderToday(); this._update(); }
+      else if (this._lastHour != null && this._lastHour !== hr) { this._tkey = null; this._renderToday(); }
+      this._day = k; this._lastHour = hr;
     }
     _loadMet() {
       var self = this, loc = this._location(); if (!loc) return;
       metFetch(loc.latitude, loc.longitude).then(function (d) {
         if (!d || !self._built) return;
-        self._met = d; self._daily = d.daily; self._usedMet = true;
-        self._fkey = null; self._renderForecast(); self._weather();
+        self._met = d; self._daily = d.daily; self._hourly = d.hourly; self._hourlyFromMet = true; self._usedMet = true;
+        self._fkey = null; self._tkey = null; self._renderForecast(); self._renderToday(); self._weather();
       });
     }
     // fill the days the weather entity does not provide (e.g. the Met.no integration stops at today + 5)
     _complete() {
       var c = this._config, self = this;
-      if (c.weather_source !== 'entity' || !c.complete_forecast || futureDays(this._daily).length >= c.forecast_days) return;
+      var needDays = c.complete_forecast && futureDays(this._daily).length < c.forecast_days;
+      var needHourly = c.complete_forecast && c.show_today_forecast !== false && !this._subH && !this._hourly;
+      if (c.weather_source !== 'entity' || (!needDays && !needHourly)) return;
       var loc = this._location(); if (!loc) return;
       metFetch(loc.latitude, loc.longitude).then(function (d) {
         if (!d || !self._built) return;
@@ -769,6 +968,10 @@
         self._extra = /F/.test(u) ? d.daily.map(function (f) {
           return Object.assign({}, f, { temperature: f.temperature * 9 / 5 + 32, templow: f.templow == null ? null : f.templow * 9 / 5 + 32 });
         }) : d.daily;
+        if (needHourly && !self._hourly && d.hourly) {
+          self._hourly = d.hourly; self._hourlyFromMet = true;
+          self._tkey = null; self._renderToday();
+        }
         self._fkey = null; self._renderForecast();
       });
     }
@@ -817,6 +1020,7 @@
       if (!this._built) return;
       this._weather();
       this._renderChips();
+      this._renderToday();
       this._renderForecast();
     }
 
@@ -890,6 +1094,62 @@
       this._$('attr').hidden = !this._usedMet;
     }
 
+    _renderToday() {
+      var c = this._config, el = this._$('td'); if (!el) return;
+      var h = this._hass, l = langOf(h), list = this._hourly;
+      if (!list || !list.length) { el.hidden = true; return; }
+      var sys = (h && h.config && h.config.unit_system && h.config.unit_system.temperature) || '°C';
+      var wa = (c.weather_source === 'entity' && st(h, c.weather_entity) && st(h, c.weather_entity).attributes) || {};
+      var unit = this._hourlyFromMet ? (/F/.test(sys) ? '°F' : '°C') : (wa.temperature_unit || sys);
+      var windUnit = this._hourlyFromMet ? (/F/.test(sys) ? 'mph' : 'km/h') : (wa.wind_speed_unit || 'km/h');
+      var pressUnit = this._hourlyFromMet ? 'hPa' : (wa.pressure_unit || 'hPa');
+      var src = this._hourlyFromMet ? list.map(function (f) {
+        var isF = /F/.test(unit);
+        return Object.assign({}, f, {
+          temperature: f.temperature == null ? null : (isF ? f.temperature * 9 / 5 + 32 : f.temperature),
+          wind_speed: f.wind_speed == null ? null : (isF ? f.wind_speed * 2.23694 : f.wind_speed * 3.6)
+        });
+      }) : list;
+      var parts = groupTodayParts(src, new Date(), unit, windUnit, pressUnit);
+      if (!parts.length) { el.hidden = true; return; }
+      var showDet = c.today_forecast_details === true;
+      var key = JSON.stringify([l, unit, showDet, parts.map(function (p) {
+        return [p.key, p.cond, Math.round(p.hi), Math.round(p.lo), p.precipProb, p.wind != null ? Math.round(p.wind) : null, p.hum != null ? Math.round(p.hum) : null, p.press != null ? Math.round(p.press) : null];
+      })]);
+      if (key === this._tkey && !el.hidden) return;
+      this._tkey = key;
+      el.hidden = false;
+      el.style.gridTemplateColumns = 'repeat(' + parts.length + ',minmax(0,1fr))';
+      var uSuf = tr(l, 'p_u') || '';
+      el.innerHTML = parts.map(function (p) {
+        var html = '<div class="tdp">' +
+          '<div class="tdh"><span class="tdn">' + esc(tr(l, p.key)) + '</span><span class="tdr">' + esc(p.range + uSuf) + '</span></div>' +
+          '<div class="tdm"><span class="tdi">' + weatherSvg(p.cond, p.night) + '</span>' +
+          '<span class="tdt"><span class="hi">' + esc(fmt(p.hi, 0, l)) + '°</span><span class="sl">/</span><span class="lo">' + esc(fmt(p.lo, 0, l)) + '°</span></span></div>';
+        if (showDet) {
+          html += '<div class="tdc">' + esc(condLabel(h, p.cond)) + '</div>';
+          var m = [];
+          if (p.precipProb != null) m.push('<span><ha-icon icon="mdi:umbrella"></ha-icon>' + esc(fmt(p.precipProb, 0, l)) + '%</span>');
+          else if (p.precip != null) m.push('<span><ha-icon icon="mdi:umbrella"></ha-icon>' + esc(fmt(p.precip, 1, l)) + ' mm</span>');
+          if (p.wind != null) {
+            var dir = compassDir(p.windDeg, l);
+            var arrow = p.windDeg != null
+              ? '<svg class="wa" viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(' + Math.round((p.windDeg + 180) % 360) + 'deg)"><path fill="currentColor" d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>'
+              : '<ha-icon icon="mdi:weather-windy"></ha-icon>';
+            m.push('<span>' + arrow + esc((dir ? dir + ' ' : '') + fmt(p.wind, 0, l) + (p.windUnit ? ' ' + p.windUnit : '')) + '</span>');
+          }
+          if (p.feelsHi != null) {
+            m.push('<span class="heart"><ha-icon icon="mdi:heart"></ha-icon>' + esc(fmt(p.feelsHi, 0, l) + '°/' + fmt(p.feelsLo, 0, l) + '°') + '</span>');
+          }
+          if (p.hum != null) m.push('<span><ha-icon icon="mdi:water-percent"></ha-icon>' + esc(fmt(p.hum, 0, l)) + '%</span>');
+          if (p.press != null) m.push('<span><ha-icon icon="mdi:gauge"></ha-icon>' + esc(Math.round(p.press) + ' ' + p.pressUnit) + '</span>');
+          if (m.length) html += '<div class="tdd">' + m.join('') + '</div>';
+        }
+        return html + '</div>';
+      }).join('');
+      this._fit();
+    }
+
     _renderForecast() {
       var c = this._config, el = this._$('fc'); if (!el) return;
       var l = langOf(this._hass), list = this._extra ? mergeDaily(this._daily, this._extra) : this._daily;
@@ -933,6 +1193,7 @@
       temperature_entity: 'Outdoor temperature sensor (optional)', humidity_entity: 'Outdoor humidity sensor (optional)',
       indoor_temperature_entity: 'Indoor temperature sensor (optional)', indoor_label: 'Indoor caption', indoor_label_h: 'Default: “Indoor”, in your language.',
       show_details: 'Show high / low, humidity and wind', temperature_decimals: 'Temperature decimals',
+      show_today_forecast: 'Show today’s day parts above clock', today_forecast_details: 'Show extra details (rain, wind, feels like, humidity, pressure)',
       show_forecast: 'Show the next days', forecast_days: 'Number of days',
       time_format: 'Time format', tf_auto: 'Automatic (from your profile)', tf_24: '24 hours', tf_12: '12 hours (AM / PM)',
       show_greeting: 'Show greeting', show_date: 'Show date', show_seconds_bar: 'Show seconds bar', clock_max_size: 'Maximum clock size',
@@ -944,6 +1205,7 @@
       appearance: 'Style', ap_auto: 'Automatic (follows the theme)', ap_dark: 'Dark', ap_light: 'Light',
       font: 'Font', f_space: 'Space Grotesk (from Google Fonts)', f_theme: 'Theme font', f_custom: 'Custom font', font_family: 'Custom font family',
       text_scale: 'Text size', text_scale_h: 'Larger values make the card easier to read from a distance.', min_height: 'Minimum height',
+      fullscreen: 'Fill screen (panel view / wall tablet)', fullscreen_h: 'Stretches the card to full viewport height without rounded corners. Best used with a Panel (1 card) view.',
       glass: 'Glass effect', glow: 'Glow intensity', border_radius: 'Corner radius',
       accent_color: 'Accent color', secondary_color: 'Secondary color', time_color: 'Clock color', indoor_color: 'Indoor icon color', text_color: 'Text color',
       background_color: 'Background tint', background_opacity: 'Tint strength', reset_colors: 'Reset colors',
@@ -959,6 +1221,7 @@
       temperature_entity: 'Sensore temperatura esterna (facoltativo)', humidity_entity: 'Sensore umidità esterna (facoltativo)',
       indoor_temperature_entity: 'Sensore temperatura in casa (facoltativo)', indoor_label: 'Didascalia della temperatura in casa', indoor_label_h: 'Se vuota: “In casa”.',
       show_details: 'Mostra massima / minima, umidità e vento', temperature_decimals: 'Decimali della temperatura',
+      show_today_forecast: 'Mostra le fasce orarie di oggi sopra l’orologio', today_forecast_details: 'Mostra dettagli extra (pioggia, vento, percepita, umidità, pressione)',
       show_forecast: 'Mostra i prossimi giorni', forecast_days: 'Numero di giorni',
       time_format: 'Formato dell’ora', tf_auto: 'Automatico (dal tuo profilo)', tf_24: '24 ore', tf_12: '12 ore (AM / PM)',
       show_greeting: 'Mostra il saluto', show_date: 'Mostra la data', show_seconds_bar: 'Mostra la barra dei secondi', clock_max_size: 'Grandezza massima dell’ora',
@@ -970,10 +1233,39 @@
       appearance: 'Stile', ap_auto: 'Automatico (segue il tema)', ap_dark: 'Scuro', ap_light: 'Chiaro',
       font: 'Carattere', f_space: 'Space Grotesk (da Google Fonts)', f_theme: 'Carattere del tema', f_custom: 'Carattere personalizzato', font_family: 'Nome del carattere',
       text_scale: 'Grandezza dei testi', text_scale_h: 'Valori più alti rendono la card leggibile anche da lontano.', min_height: 'Altezza minima',
+      fullscreen: 'Riempi lo schermo (vista pannello / tablet)', fullscreen_h: 'Estende la card all’intera altezza dello schermo senza bordi arrotondati.',
       glass: 'Effetto vetro', glow: 'Intensità del bagliore', border_radius: 'Raggio degli angoli',
       accent_color: 'Colore principale', secondary_color: 'Colore secondario', time_color: 'Colore dell’ora', indoor_color: 'Colore dell’icona casa', text_color: 'Colore dei testi',
       background_color: 'Tinta dello sfondo', background_opacity: 'Intensità della tinta', reset_colors: 'Ripristina i colori',
       tap_action: 'Azione al tocco', hold_action: 'Azione tenendo premuto', double_tap_action: 'Azione al doppio tocco'
+    },
+    de: {
+      s_weather: 'Wetter', s_forecast: 'Vorhersage', s_clock: 'Uhr', s_calendar: 'Kalenderereignisse', s_look: 'Darstellung', s_colors: 'Farben', s_actions: 'Interaktionen',
+      s_weather_h: 'Woher die Wetterdaten kommen: eine Home-Assistant-Wetter-Entität oder Met.no für einen beliebigen Ort.',
+      weather_source: 'Wetterquelle', src_entity: 'Home-Assistant-Wetter-Entität', src_met: 'Met.no — Ort auf der Karte wählen', src_none: 'Kein Wetter',
+      weather_entity: 'Wetter-Entität', location: 'Ort für die Vorhersage', location_h: 'Marker verschieben. Ohne Auswahl wird der Home-Standort verwendet.',
+      location_name: 'Ortsname (optional)', location_name_h: 'Wird vor der Wetterlage angezeigt, z. B. „Hintersudberg“.',
+      complete_forecast: 'Fehlende Tage mit Met.no ergänzen', complete_forecast_h: 'Einige Integrationen liefern nur 5 Tage. Der Browser fragt api.met.no für den Ort ab.',
+      temperature_entity: 'Außentemperatur-Sensor (optional)', humidity_entity: 'Außenluftfeuchte-Sensor (optional)',
+      indoor_temperature_entity: 'Innentemperatur-Sensor (optional)', indoor_label: 'Beschriftung Innen', indoor_label_h: 'Standard: „Innen“.',
+      show_details: 'Max / Min, Luftfeuchte und Wind anzeigen', temperature_decimals: 'Nachkommastellen Temperatur',
+      show_today_forecast: 'Tagesabschnitte (Heute) oberhalb der Uhr anzeigen', today_forecast_details: 'Zusätzliche Details anzeigen (Regen, Wind, Gefühlt, Feuchte, Druck)',
+      show_forecast: 'Wochen-Vorhersage anzeigen', forecast_days: 'Anzahl Tage',
+      time_format: 'Zeitformat', tf_auto: 'Automatisch (Profil)', tf_24: '24 Stunden', tf_12: '12 Stunden (AM / PM)',
+      show_greeting: 'Begrüßung anzeigen', show_date: 'Datum anzeigen', show_seconds_bar: 'Sekundenbalken anzeigen', clock_max_size: 'Maximale Uhrgröße',
+      calendar_entity: 'Kalender (z. B. Müllabfuhr)', calendar_show_tomorrow: 'Auch Morgen anzeigen', calendar_max_chips: 'Max. angezeigte Termine',
+      calendar_default_icon: 'Icon für andere Termine', calendar_default_color: 'Farbe für andere Termine',
+      s_types: 'Termin-Typen', types_h: 'Termine mit passendem Text erhalten eigenes Label, Icon und Farbe.',
+      pattern: 'Suchtext', label: 'Bezeichnung', icon: 'Icon', color: 'Farbe',
+      add_type: 'Termin-Typ hinzufügen', add_examples: 'Müllabfuhr-Beispiele hinzufügen', remove: 'Entfernen',
+      appearance: 'Stil', ap_auto: 'Automatisch (Theme)', ap_dark: 'Dunkel', ap_light: 'Hell',
+      font: 'Schriftart', f_space: 'Space Grotesk (Google Fonts)', f_theme: 'Theme-Schriftart', f_custom: 'Eigene Schriftart', font_family: 'Schriftname',
+      text_scale: 'Textgröße', text_scale_h: 'Größere Werte verbessern die Lesbarkeit aus der Entfernung.', min_height: 'Mindesthöhe',
+      fullscreen: 'Bildschirm füllen (Vollbild / Panel-Ansicht)', fullscreen_h: 'Dehnt die Karte randlos auf die volle Bildschirmhöhe aus. Ideal für Panel-Ansicht (1 Karte) auf dem Wandtablet.',
+      glass: 'Glaseffekt', glow: 'Leuchtintensität', border_radius: 'Eckenradius',
+      accent_color: 'Akzentfarbe', secondary_color: 'Sekundärfarbe', time_color: 'Uhrfarbe', indoor_color: 'Innen-Icon-Farbe', text_color: 'Textfarbe',
+      background_color: 'Hintergrundtönung', background_opacity: 'Tönungsstärke', reset_colors: 'Farben zurücksetzen',
+      tap_action: 'Tippen-Aktion', hold_action: 'Halten-Aktion', double_tap_action: 'Doppeltippen-Aktion'
     }
   };
   var EXAMPLES = {
@@ -1059,7 +1351,11 @@
         { name: 'temperature_decimals', selector: { number: { min: 0, max: 2, step: 1, mode: 'box' } } }
       ] });
 
-      var forecast = [{ name: 'show_forecast', selector: { boolean: {} } }];
+      var forecast = [
+        { name: 'show_today_forecast', selector: { boolean: {} } }
+      ];
+      if (c.show_today_forecast !== false) forecast.push({ name: 'today_forecast_details', selector: { boolean: {} } });
+      forecast.push({ name: 'show_forecast', selector: { boolean: {} } });
       if (c.show_forecast !== false) forecast.push({ name: 'forecast_days', selector: { number: { min: 1, max: 7, step: 1, mode: 'slider' } } });
 
       var clock = [
@@ -1090,7 +1386,8 @@
       ];
       if (c.font === 'custom') look.push({ name: 'font_family', selector: { text: {} } });
       look.push({ name: 'text_scale', selector: { number: { min: 0.6, max: 1.8, step: 0.05, mode: 'slider' } } });
-      look.push({ name: 'min_height', selector: { number: { min: 200, max: 1200, step: 10, mode: 'slider', unit_of_measurement: 'px' } } });
+      look.push({ name: 'fullscreen', selector: { boolean: {} } });
+      if (!c.fullscreen) look.push({ name: 'min_height', selector: { number: { min: 200, max: 1200, step: 10, mode: 'slider', unit_of_measurement: 'px' } } });
       look.push({ type: 'grid', name: '', schema: [
         { name: 'glass', selector: { boolean: {} } },
         { name: 'glow', selector: { number: { min: 0, max: 1, step: 0.05, mode: 'slider' } } }
@@ -1192,7 +1489,7 @@
           'button.icon:hover{color:var(--error-color, #db4437);background:var(--secondary-background-color)}' +
           '.foot{font-size:12px;color:var(--secondary-text-color);text-align:right}.foot a{color:inherit}' +
           '</style><div class="box"><div id="form"></div><div id="types"></div>' +
-          '<div class="foot">Glass Clock Weather Card ' + VERSION + ' · <a href="' + REPO + '" target="_blank" rel="noreferrer">GitHub</a></div></div>';
+          '<div class="foot">Glass Clock Weather Card Plus ' + VERSION + ' · <a href="' + REPO + '" target="_blank" rel="noreferrer">GitHub</a></div></div>';
         this._form = document.createElement('ha-form');
         this._form.computeLabel = function (s) { return s.title || L(s.name); };
         this._form.computeHelper = function (s) {
@@ -1282,8 +1579,8 @@
   customElements.define(EDITOR, GlassClockWeatherCardEditor);
   window.customCards = window.customCards || [];
   window.customCards.push({
-    type: CARD, name: 'Glass Clock Weather Card', preview: true, documentationURL: REPO,
-    description: 'A big, glanceable clock with animated weather, daily forecast, indoor temperature and calendar chips.'
+    type: CARD, name: 'Glass Clock Weather Card Plus', preview: true, documentationURL: REPO,
+    description: 'A big, glanceable clock with today day-parts forecast, animated weather, daily forecast, indoor temperature, fullscreen mode and calendar chips.'
   });
-  console.info('%c GLASS-CLOCK-WEATHER-CARD %c ' + VERSION + ' ', 'color:#0b0f1a;background:#5ff3ff;font-weight:700;border-radius:4px 0 0 4px', 'color:#5ff3ff;background:#0b0f1a;border-radius:0 4px 4px 0');
+  console.info('%c GLASS-CLOCK-WEATHER-CARD-PLUS %c ' + VERSION + ' ', 'color:#0b0f1a;background:#5ff3ff;font-weight:700;border-radius:4px 0 0 4px', 'color:#5ff3ff;background:#0b0f1a;border-radius:0 4px 4px 0');
 })();

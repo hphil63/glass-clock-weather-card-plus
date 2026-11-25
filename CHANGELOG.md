@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+
+- Forked as **Glass Clock Weather Card Plus** (`custom:glass-clock-weather-card-plus`) so it can be installed side-by-side with the original card in HACS.
+- Added a compact **today day-parts forecast row** above the clock (`Morgens` / `Mittags` / `Abends` / `Nachts`) using hourly forecasts (or Met.no), showing animated weather icons and high/low temperatures (`show_today_forecast`).
+- Added optional detailed day-part metrics (`today_forecast_details`): condition text, rain probability/amount, wind direction arrow + speed, feels-like temperature, humidity, and air pressure.
+- Added **fullscreen / panel-view mode** (`fullscreen: true`) to fill wall-tablet displays edge-to-edge without scrollbars.
+- Added full German translations for the visual editor and weather conditions.
+
 ## 1.0.2
 
 - The forecast comes back by itself after Home Assistant restarts: the subscription retries when the weather integration is not ready yet and subscribes again after a reconnection.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Glass Clock Weather Card – demo</title>
+<title>Glass Clock Weather Card Plus – demo</title>
 <style>
   html, body { margin: 0; min-height: 100%; }
   body {
@@ -62,6 +62,18 @@ const day = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d;
 const ymd = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const conds = ['partlycloudy', 'sunny', 'rainy', 'cloudy', 'sunny', 'lightning-rainy', 'partlycloudy', 'snowy'];
 const forecast = conds.map((c, i) => ({ datetime: new Date(day(i).setHours(12, 0, 0, 0)).toISOString(), condition: c, temperature: [21, 23, 16, 18, 24, 19, 22, 9][i], templow: [12, 13, 11, 10, 14, 12, 13, 2][i] }));
+const hourlyForecast = [];
+for (let h = 0; h < 36; h++) {
+  const dt = new Date(); dt.setHours(h, 0, 0, 0);
+  const hr = dt.getHours();
+  hourlyForecast.push({
+    datetime: dt.toISOString(),
+    condition: hr >= 22 || hr < 6 ? 'clear-night' : hr >= 18 ? 'partlycloudy' : hr >= 12 ? 'sunny' : 'partlycloudy',
+    temperature: hr >= 12 && hr < 18 ? 19 : hr >= 18 && hr < 22 ? 15 : hr >= 6 && hr < 12 ? 14 : 11,
+    precipitation_probability: hr >= 18 ? 10 : 0,
+    wind_speed: 8, wind_bearing: 225, humidity: 65, pressure: 1018
+  });
+}
 
 const hass = {
   language: lang, locale: { language: lang, time_format: Q.get('h12') ? '12' : 'language' },
@@ -69,12 +81,12 @@ const hass = {
   config: { latitude: 45.46, longitude: 9.19, unit_system: { temperature: '°C' } },
   localize: () => '',
   states: {
-    'weather.home': { entity_id: 'weather.home', state: 'partlycloudy', attributes: { temperature: 17.8, humidity: 62, wind_speed: 9, wind_speed_unit: 'km/h', temperature_unit: '°C', supported_features: 1, friendly_name: 'Home' } },
+    'weather.home': { entity_id: 'weather.home', state: 'partlycloudy', attributes: { temperature: 17.8, humidity: 62, wind_speed: 9, wind_speed_unit: 'km/h', temperature_unit: '°C', pressure_unit: 'hPa', supported_features: 3, friendly_name: 'Home' } },
     'sensor.indoor_temperature': { entity_id: 'sensor.indoor_temperature', state: '21.4', attributes: { unit_of_measurement: '°C', device_class: 'temperature' } },
     'sun.sun': { entity_id: 'sun.sun', state: 'above_horizon', attributes: {} }
   },
   connection: {
-    subscribeMessage: (cb, msg) => { setTimeout(() => cb({ type: msg.forecast_type, forecast }), 60); return Promise.resolve(() => {}); }
+    subscribeMessage: (cb, msg) => { setTimeout(() => cb({ type: msg.forecast_type, forecast: msg.forecast_type === 'hourly' ? hourlyForecast : forecast }), 60); return Promise.resolve(() => {}); }
   },
   callApi: (method, path) => Promise.resolve(lang === 'it'
     ? [{ summary: 'Raccolta Plastica', start: { date: ymd(day(0)) }, end: { date: ymd(day(1)) } }, { summary: 'Carta e cartone', start: { date: ymd(day(1)) }, end: { date: ymd(day(2)) } }]
@@ -86,18 +98,18 @@ const types = lang === 'it'
   : [{ pattern: 'Plastic', label: 'Plastic', icon: 'mdi:bottle-soda-classic-outline', color: [255, 198, 64] }, { pattern: 'Paper', label: 'Paper', icon: 'mdi:newspaper-variant-outline', color: [96, 165, 250] }];
 
 const base = {
-  type: 'custom:glass-clock-weather-card', weather_source: 'entity', weather_entity: 'weather.home',
+  type: 'custom:glass-clock-weather-card-plus', weather_source: 'entity', weather_entity: 'weather.home',
   indoor_temperature_entity: 'sensor.indoor_temperature', calendar_entity: 'calendar.waste', calendar_types: types
 };
 const extra = Q.get('config') ? JSON.parse(Q.get('config')) : {};
 const widths = (Q.get('w') || '860').split(',');
 
 const s = document.createElement('script');
-s.src = '../dist/glass-clock-weather-card.js';
+s.src = '../dist/glass-clock-weather-card-plus.js';
 s.onload = () => {
   widths.forEach((w) => {
     const slot = document.createElement('div'); slot.className = 'slot'; slot.style.setProperty('--w', w + 'px');
-    const card = document.createElement('glass-clock-weather-card');
+    const card = document.createElement('glass-clock-weather-card-plus');
     card.setConfig(Object.assign({}, base, extra));
     slot.appendChild(card); document.getElementById('wrap').appendChild(slot);
     card.hass = hass;
