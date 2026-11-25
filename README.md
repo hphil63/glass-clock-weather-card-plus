@@ -1,6 +1,6 @@
 <p align="center"><img src="https://raw.githubusercontent.com/ironblaster/glass-clock-weather-card/main/images/banner.png" alt="Casa Futura"></p>
 
-# Glass Clock Weather Card
+# Glass Clock Weather Card Plus
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories)
 [![GitHub release](https://img.shields.io/github/v/release/ironblaster/glass-clock-weather-card)](https://github.com/ironblaster/glass-clock-weather-card/releases)
@@ -39,7 +39,7 @@ Everything can be set from the visual editor: weather source, a place on the map
 
 1. In HACS open the menu (⋮) → **Custom repositories**.
 2. Add `https://github.com/ironblaster/glass-clock-weather-card` with type **Dashboard**.
-3. Install **Glass Clock Weather Card** and reload the browser.
+3. Install **Glass Clock Weather Card Plus** and reload the browser.
 
 ### Manual
 
@@ -51,7 +51,7 @@ Home Assistant lets browsers cache files in `/local` for a long time: when you u
 
 ## Configuration
 
-Add the card from the dashboard editor (**Glass Clock Weather Card**) and set it up with the visual editor. Every option also works in YAML.
+Add the card from the dashboard editor (**Glass Clock Weather Card Plus**) and set it up with the visual editor. Every option also works in YAML.
 
 ### Minimal
 
