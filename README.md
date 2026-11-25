@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/hphil63/glass-clock-weather-card-plus/main/images/banner.png" alt="Glass Clock Weather Card Plus"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/hphil63/glass-clock-weather-card-plus/main/images/banner.svg" alt="FilSoft – Glass Clock Weather Card Plus"></p>
 
 # Glass Clock Weather Card Plus
 
