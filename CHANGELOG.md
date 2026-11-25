@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1
+
+- Added optional `indoor_humidity_entity` (shown next to the indoor label, e.g. `Innen · 48%`).
+
 ## 1.1.0
 
 - Forked as **Glass Clock Weather Card Plus** (`custom:glass-clock-weather-card-plus`) so it can be installed side-by-side with the original card in HACS.

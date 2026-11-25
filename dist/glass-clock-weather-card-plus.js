@@ -12,7 +12,7 @@
 
   var CARD = 'glass-clock-weather-card-plus';
   var EDITOR = CARD + '-editor';
-  var VERSION = '1.1.0';
+  var VERSION = '1.1.1';
   var REPO = 'https://github.com/hphil63/glass-clock-weather-card-plus';
   if (customElements.get(CARD)) return;
 
@@ -560,7 +560,7 @@
 
   var DEF = {
     weather_source: null, weather_entity: null, location: null, location_name: '',
-    temperature_entity: null, humidity_entity: null, indoor_temperature_entity: null, indoor_label: '',
+    temperature_entity: null, humidity_entity: null, indoor_temperature_entity: null, indoor_humidity_entity: null, indoor_label: '',
     show_details: true, temperature_decimals: 1, show_today_forecast: true, today_forecast_details: false,
     show_forecast: true, forecast_days: 7, complete_forecast: false,
     time_format: 'auto', show_greeting: true, show_date: true, show_seconds_bar: true, clock_max_size: 320,
@@ -738,7 +738,7 @@
 
     _changed(old) {
       var c = this._config;
-      var ids = [c.weather_entity, c.temperature_entity, c.humidity_entity, c.indoor_temperature_entity, 'sun.sun'];
+      var ids = [c.weather_entity, c.temperature_entity, c.humidity_entity, c.indoor_temperature_entity, c.indoor_humidity_entity, 'sun.sun'];
       for (var i = 0; i < ids.length; i++) if (ids[i] && old.states[ids[i]] !== this._hass.states[ids[i]]) return true;
       return langOf(old) !== langOf(this._hass);
     }
@@ -1074,13 +1074,16 @@
         if (c.location_name) cap = c.location_name + (cap ? ' · ' + cap : '');
         this._$('wc').textContent = cap;
       }
-      var ins = st(h, c.indoor_temperature_entity), rdi = this._$('rdi');
+      var ins = st(h, c.indoor_temperature_entity), ihs = st(h, c.indoor_humidity_entity), rdi = this._$('rdi');
       rdi.hidden = !c.indoor_temperature_entity;
       this._$('sep').hidden = !wx || !c.indoor_temperature_entity;
       if (c.indoor_temperature_entity) {
         var it = ins ? num(ins.state) : null, iu = (ins && ins.attributes.unit_of_measurement) || cur.unit;
+        var ih = ihs ? num(ihs.state) : null;
         this._$('wti').innerHTML = esc(fmt(it, dec, l)) + '<small>' + esc(iu) + '</small>';
-        this._$('wil').textContent = c.indoor_label || tr(l, 'indoor');
+        var il = c.indoor_label || tr(l, 'indoor');
+        if (ih != null) il += ' · ' + fmt(ih, 0, l) + '%';
+        this._$('wil').textContent = il;
       }
       var det = [];
       if (wx && c.show_details !== false) {
@@ -1191,7 +1194,7 @@
       location_name: 'Place name (optional)', location_name_h: 'Shown before the weather condition, e.g. “Milan”.',
       complete_forecast: 'Complete missing days with Met.no', complete_forecast_h: 'Some integrations give only 5 days. Your browser asks api.met.no for the place above, rounded to about 1 km.',
       temperature_entity: 'Outdoor temperature sensor (optional)', humidity_entity: 'Outdoor humidity sensor (optional)',
-      indoor_temperature_entity: 'Indoor temperature sensor (optional)', indoor_label: 'Indoor caption', indoor_label_h: 'Default: “Indoor”, in your language.',
+      indoor_temperature_entity: 'Indoor temperature sensor (optional)', indoor_humidity_entity: 'Indoor humidity sensor (optional)', indoor_label: 'Indoor caption', indoor_label_h: 'Default: “Indoor”, in your language.',
       show_details: 'Show high / low, humidity and wind', temperature_decimals: 'Temperature decimals',
       show_today_forecast: 'Show today’s day parts above clock', today_forecast_details: 'Show extra details (rain, wind, feels like, humidity, pressure)',
       show_forecast: 'Show the next days', forecast_days: 'Number of days',
@@ -1219,7 +1222,7 @@
       location_name: 'Nome del posto (facoltativo)', location_name_h: 'Compare prima della condizione meteo, per esempio “Milano”.',
       complete_forecast: 'Completa i giorni mancanti con Met.no', complete_forecast_h: 'Alcune integrazioni danno solo 5 giorni. Il browser chiede ad api.met.no le previsioni del posto qui sopra, arrotondato a circa 1 km.',
       temperature_entity: 'Sensore temperatura esterna (facoltativo)', humidity_entity: 'Sensore umidità esterna (facoltativo)',
-      indoor_temperature_entity: 'Sensore temperatura in casa (facoltativo)', indoor_label: 'Didascalia della temperatura in casa', indoor_label_h: 'Se vuota: “In casa”.',
+      indoor_temperature_entity: 'Sensore temperatura in casa (facoltativo)', indoor_humidity_entity: 'Sensore umidità in casa (facoltativo)', indoor_label: 'Didascalia della temperatura in casa', indoor_label_h: 'Se vuota: “In casa”.',
       show_details: 'Mostra massima / minima, umidità e vento', temperature_decimals: 'Decimali della temperatura',
       show_today_forecast: 'Mostra le fasce orarie di oggi sopra l’orologio', today_forecast_details: 'Mostra dettagli extra (pioggia, vento, percepita, umidità, pressione)',
       show_forecast: 'Mostra i prossimi giorni', forecast_days: 'Numero di giorni',
@@ -1247,7 +1250,7 @@
       location_name: 'Ortsname (optional)', location_name_h: 'Wird vor der Wetterlage angezeigt, z. B. „Hintersudberg“.',
       complete_forecast: 'Fehlende Tage mit Met.no ergänzen', complete_forecast_h: 'Einige Integrationen liefern nur 5 Tage. Der Browser fragt api.met.no für den Ort ab.',
       temperature_entity: 'Außentemperatur-Sensor (optional)', humidity_entity: 'Außenluftfeuchte-Sensor (optional)',
-      indoor_temperature_entity: 'Innentemperatur-Sensor (optional)', indoor_label: 'Beschriftung Innen', indoor_label_h: 'Standard: „Innen“.',
+      indoor_temperature_entity: 'Innentemperatur-Sensor (optional)', indoor_humidity_entity: 'Innenluftfeuchte-Sensor (optional)', indoor_label: 'Beschriftung Innen', indoor_label_h: 'Standard: „Innen“.',
       show_details: 'Max / Min, Luftfeuchte und Wind anzeigen', temperature_decimals: 'Nachkommastellen Temperatur',
       show_today_forecast: 'Tagesabschnitte (Heute) oberhalb der Uhr anzeigen', today_forecast_details: 'Zusätzliche Details anzeigen (Regen, Wind, Gefühlt, Feuchte, Druck)',
       show_forecast: 'Wochen-Vorhersage anzeigen', forecast_days: 'Anzahl Tage',
@@ -1345,7 +1348,10 @@
         weather.push({ name: 'humidity_entity', selector: { entity: { filter: { domain: 'sensor', device_class: 'humidity' } } } });
       }
       weather.push({ name: 'indoor_temperature_entity', selector: { entity: { filter: { domain: 'sensor', device_class: 'temperature' } } } });
-      if (c.indoor_temperature_entity) weather.push({ name: 'indoor_label', selector: { text: {} } });
+      if (c.indoor_temperature_entity) {
+        weather.push({ name: 'indoor_humidity_entity', selector: { entity: { filter: { domain: 'sensor', device_class: 'humidity' } } } });
+        weather.push({ name: 'indoor_label', selector: { text: {} } });
+      }
       weather.push({ type: 'grid', name: '', schema: [
         { name: 'show_details', selector: { boolean: {} } },
         { name: 'temperature_decimals', selector: { number: { min: 0, max: 2, step: 1, mode: 'box' } } }
