@@ -14,10 +14,6 @@ Everything can be set from the visual editor: weather source, a place on the map
 
 ![Glass Clock Weather Card Plus](https://raw.githubusercontent.com/hphil63/glass-clock-weather-card-plus/main/images/preview.jpg)
 
-| Light style | Compact |
-| --- | --- |
-| ![Light style](https://raw.githubusercontent.com/hphil63/glass-clock-weather-card-plus/main/images/preview-light.png) | ![Compact](https://raw.githubusercontent.com/hphil63/glass-clock-weather-card-plus/main/images/preview-compact.png) |
-
 ## Features
 
 - **Today's day-parts forecast row above the clock** *(Plus)*: compact view of the remaining periods of today (`Morning / Afternoon / Evening / Night`) with animated weather icons and high/low temperatures, powered by hourly forecasts (or Met.no). Optional detailed mode (`today_forecast_details`) adds condition text, rain %, wind direction & speed, feels-like temperature, humidity and air pressure.
