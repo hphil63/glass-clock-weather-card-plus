@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2
+
+- Added optional `pressure_entity` chip with automatic 3-hour barometric trend arrow (rising / steady / falling).
+- Tapping the pressure chip opens a liquid-glass 7-day pressure history chart directly inside the card (with 7-day min/max and 3-hour tendency).
+
 ## 1.1.1
 
 - Added optional `indoor_humidity_entity` (shown next to the indoor label, e.g. `Innen · 48%`).

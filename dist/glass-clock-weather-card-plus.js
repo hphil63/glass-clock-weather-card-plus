@@ -12,7 +12,7 @@
 
   var CARD = 'glass-clock-weather-card-plus';
   var EDITOR = CARD + '-editor';
-  var VERSION = '1.1.1';
+  var VERSION = '1.1.2';
   var REPO = 'https://github.com/hphil63/glass-clock-weather-card-plus';
   if (customElements.get(CARD)) return;
 
@@ -556,11 +556,109 @@
     return out.sort(function (a, b) { return a.sort - b.sort; }).slice(0, clamp(parseInt(c.calendar_max_chips, 10) || 4, 1, 12));
   }
 
+  // barometric pressure 3-hour history for trend arrow, cached 15 minutes per entity
+  var PRESS = {};
+  function pressFetch(hass, id) {
+    if (!id || !hass || !hass.callApi) return Promise.resolve(null);
+    var c = PRESS[id];
+    if (c && c.val !== undefined && Date.now() - c.t < 15 * 60 * 1000) return Promise.resolve(c.val);
+    if (c && c.p) return c.p;
+    var s = new Date(Date.now() - 3 * 3600000);
+    var p = hass.callApi('GET', 'history/period/' + encodeURIComponent(s.toISOString()) + '?filter_entity_id=' + encodeURIComponent(id) + '&minimal_response&no_attributes')
+      .then(function (res) {
+        var arr = (Array.isArray(res) && res[0]) || [], first = null;
+        for (var i = 0; i < arr.length; i++) {
+          var v = num(arr[i] && arr[i].state);
+          if (v != null) { first = v; break; }
+        }
+        PRESS[id] = { t: Date.now(), val: first };
+        return first;
+      })
+      .catch(function () { PRESS[id] = { t: Date.now(), val: null }; return null; });
+    PRESS[id] = { t: c ? c.t : 0, val: c ? c.val : undefined, p: p };
+    return p;
+  }
+  function pressTrend(cur, old, unit) {
+    if (cur == null || old == null) return null;
+    var d = cur - old;
+    var dHpa = /inhg/i.test(unit || '') ? d * 33.8639 : d;
+    if (dHpa >= 1.5) return { icon: 'mdi:arrow-up', cls: 'up', delta: d };
+    if (dHpa >= 0.5) return { icon: 'mdi:arrow-top-right', cls: 'up', delta: d };
+    if (dHpa <= -1.5) return { icon: 'mdi:arrow-down', cls: 'dn', delta: d };
+    if (dHpa <= -0.5) return { icon: 'mdi:arrow-bottom-right', cls: 'dn', delta: d };
+    return { icon: 'mdi:arrow-right', cls: 'eq', delta: d };
+  }
+  function pressHistory7d(hass, id) {
+    if (!id || !hass || !hass.callApi) return Promise.resolve([]);
+    var end = new Date(), start = new Date(end.getTime() - 7 * 86400000);
+    return hass.callApi('GET', 'history/period/' + encodeURIComponent(start.toISOString()) +
+      '?end_time=' + encodeURIComponent(end.toISOString()) +
+      '&filter_entity_id=' + encodeURIComponent(id) + '&minimal_response&no_attributes')
+      .then(function (res) {
+        var arr = (Array.isArray(res) && res[0]) || [], pts = [];
+        for (var i = 0; i < arr.length; i++) {
+          var v = num(arr[i] && arr[i].state);
+          var ts = arr[i] && (arr[i].lu || arr[i].lc || arr[i].last_updated || arr[i].last_changed);
+          var ms = typeof ts === 'number' ? (ts < 1e12 ? ts * 1000 : ts) : (ts ? new Date(ts).getTime() : NaN);
+          if (v != null && !isNaN(ms)) pts.push({ t: ms, v: v });
+        }
+        if (pts.length > 180) {
+          var step = pts.length / 180, out = [];
+          for (var j = 0; j < 180; j++) out.push(pts[Math.floor(j * step)]);
+          if (out[out.length - 1] !== pts[pts.length - 1]) out.push(pts[pts.length - 1]);
+          return out;
+        }
+        return pts;
+      })
+      .catch(function () { return []; });
+  }
+  function pressChartSvg(pts, unit, l) {
+    var W = 640, H = 220, pL = 54, pR = 14, pT = 16, pB = 30;
+    var cw = W - pL - pR, ch = H - pT - pB;
+    var now = Date.now(), t0 = now - 7 * 86400000, tSpan = Math.max(1, now - t0);
+    var vals = pts.map(function (p) { return p.v; });
+    var rawLo = Math.min.apply(null, vals), rawHi = Math.max.apply(null, vals);
+    var pad = Math.max(1, (rawHi - rawLo) * 0.12);
+    var lo = Math.floor(rawLo - pad), hi = Math.ceil(rawHi + pad);
+    if (hi <= lo) { lo -= 2; hi += 2; }
+    var vSpan = hi - lo;
+    var X = function (t) { return pL + clamp((t - t0) / tSpan, 0, 1) * cw; };
+    var Y = function (v) { return pT + (1 - (v - lo) / vSpan) * ch; };
+    var grid = '';
+    [0, 0.5, 1].forEach(function (f) {
+      var y = pT + f * ch, val = hi - f * vSpan;
+      var lbl = /inhg/i.test(unit || '') ? fmt(val, 2, l) : Math.round(val);
+      grid += '<line x1="' + pL + '" y1="' + y.toFixed(1) + '" x2="' + (W - pR) + '" y2="' + y.toFixed(1) + '" stroke="currentColor" stroke-opacity=".12" stroke-dasharray="3 4"/>' +
+        '<text x="' + (pL - 8) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end" fill="currentColor" fill-opacity=".55" font-size="11">' + esc(lbl) + '</text>';
+    });
+    var d0 = new Date(now); d0.setHours(0, 0, 0, 0);
+    for (var k = 6; k >= 0; k--) {
+      var dd = new Date(d0.getTime() - k * 86400000), tx = X(dd.getTime());
+      if (tx < pL + 4 || tx > W - pR - 4) continue;
+      var dn = dd.toLocaleDateString(l, { weekday: 'short' }).replace('.', '');
+      dn = dn.charAt(0).toUpperCase() + dn.slice(1);
+      grid += '<line x1="' + tx.toFixed(1) + '" y1="' + pT + '" x2="' + tx.toFixed(1) + '" y2="' + (H - pB) + '" stroke="currentColor" stroke-opacity=".08"/>' +
+        '<text x="' + tx.toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle" fill="currentColor" fill-opacity=".6" font-size="11">' + esc(dn) + '</text>';
+    }
+    var path = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(p.t).toFixed(1) + ',' + Y(p.v).toFixed(1); }).join(' ');
+    var last = pts[pts.length - 1], first = pts[0];
+    var area = path + ' L' + X(last.t).toFixed(1) + ',' + (H - pB) + ' L' + X(first.t).toFixed(1) + ',' + (H - pB) + ' Z';
+    return '<svg class="psvg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' +
+      '<defs><linearGradient id="gcwPL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="rgb(var(--gcw-accent))"/><stop offset="1" stop-color="rgb(var(--gcw-accent2))"/></linearGradient>' +
+      '<linearGradient id="gcwPA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(var(--gcw-accent))" stop-opacity=".30"/><stop offset="1" stop-color="rgb(var(--gcw-accent))" stop-opacity="0"/></linearGradient></defs>' +
+      grid +
+      '<path d="' + area + '" fill="url(#gcwPA)"/>' +
+      '<path d="' + path + '" fill="none" stroke="url(#gcwPL)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<circle cx="' + X(last.t).toFixed(1) + '" cy="' + Y(last.v).toFixed(1) + '" r="4.5" fill="rgb(var(--gcw-accent))" stroke="#fff" stroke-width="1.5"/>' +
+      '</svg>';
+  }
+
   /* ================================================================ card */
 
   var DEF = {
     weather_source: null, weather_entity: null, location: null, location_name: '',
-    temperature_entity: null, humidity_entity: null, indoor_temperature_entity: null, indoor_humidity_entity: null, indoor_label: '',
+    temperature_entity: null, humidity_entity: null, pressure_entity: null,
+    indoor_temperature_entity: null, indoor_humidity_entity: null, indoor_label: '',
     show_details: true, temperature_decimals: 1, show_today_forecast: true, today_forecast_details: false,
     show_forecast: true, forecast_days: 7, complete_forecast: false,
     time_format: 'auto', show_greeting: true, show_date: true, show_seconds_bar: true, clock_max_size: 320,
@@ -613,6 +711,24 @@
     '.chip{--c:var(--gcw-text);display:inline-flex;align-items:center;gap:calc(8px * var(--s));min-height:calc(30px * var(--s));padding:0 calc(11px * var(--s));' +
     '  border-radius:999px;font-size:calc(13px * var(--s));white-space:nowrap;background:rgba(var(--gcw-text),.07);border:1px solid rgba(var(--gcw-text),.12);color:rgba(var(--gcw-text),.88)}' +
     '.chip ha-icon{--mdc-icon-size:calc(15px * var(--s));width:calc(15px * var(--s));height:calc(15px * var(--s));display:inline-flex}' +
+    '.chip .tr{margin-left:calc(-2px * var(--s));--mdc-icon-size:calc(15px * var(--s));width:calc(15px * var(--s));height:calc(15px * var(--s))}' +
+    '.chip .tr.up{color:#5cf2a6}.chip .tr.dn{color:#ff846b}.chip .tr.eq{opacity:.6}' +
+    'ha-card.gc.light .chip .tr.up{color:#159a58}ha-card.gc.light .chip .tr.dn{color:#d9483b}' +
+    '.chip.press{cursor:pointer;transition:background .15s,border-color .15s}' +
+    '.chip.press:hover{background:rgba(var(--gcw-text),.14);border-color:rgba(var(--gcw-accent),.45)}' +
+    '.pmodal{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:calc(18px * var(--s));' +
+    '  background:rgba(6,10,20,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:inherit}' +
+    'ha-card.gc.light .pmodal{background:rgba(230,236,248,.76)}' +
+    '.pbox{width:100%;max-width:680px;padding:calc(18px * var(--s)) calc(20px * var(--s));border-radius:calc(20px * var(--s));' +
+    '  background:rgba(16,22,36,.92);border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.55)}' +
+    'ha-card.gc.light .pbox{background:rgba(255,255,255,.94);border:1px solid rgba(20,30,60,.14);box-shadow:0 18px 50px rgba(20,30,60,.18)}' +
+    '.phead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:calc(10px * var(--s))}' +
+    '.ptitle{font-size:calc(18px * var(--s));font-weight:600;display:flex;align-items:center;gap:8px}' +
+    '.pstats{display:flex;flex-wrap:wrap;gap:calc(12px * var(--s));font-size:calc(13px * var(--s));opacity:.75;margin-bottom:calc(8px * var(--s));font-variant-numeric:tabular-nums}' +
+    '.pclose{border:0;background:rgba(var(--gcw-text),.1);color:rgb(var(--gcw-text));width:calc(32px * var(--s));height:calc(32px * var(--s));' +
+    '  border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:calc(18px * var(--s))}' +
+    '.pclose:hover{background:rgba(var(--gcw-text),.2)}' +
+    '.psvg{display:block;width:100%;height:auto;max-height:260px}' +
     '.chip.ev{min-height:calc(46px * var(--s));font-size:calc(18px * var(--s));padding:0 calc(18px * var(--s)) 0 calc(13px * var(--s));' +
     '  background:rgba(var(--c),.16);border-color:rgba(var(--c),.5)}' +
     '.chip.ev ha-icon{--mdc-icon-size:calc(24px * var(--s));width:calc(24px * var(--s));height:calc(24px * var(--s));color:rgb(var(--c));filter:drop-shadow(0 0 5px rgba(var(--c),.7))}' +
@@ -703,7 +819,7 @@
       c.forecast_days = clamp(parseInt(c.forecast_days, 10) || 7, 1, 7);
       this._config = c;
       this._stopData();
-      this._daily = null; this._hourly = null; this._hourlyFromMet = false; this._met = null; this._cal = null;
+      this._daily = null; this._hourly = null; this._hourlyFromMet = false; this._met = null; this._cal = null; this._pressOld = null;
       this._fkey = null; this._tkey = null; this._ckey = null; this._lastHour = null;
       this._built = false;
       if (this._hass) this._build();
@@ -738,7 +854,7 @@
 
     _changed(old) {
       var c = this._config;
-      var ids = [c.weather_entity, c.temperature_entity, c.humidity_entity, c.indoor_temperature_entity, c.indoor_humidity_entity, 'sun.sun'];
+      var ids = [c.weather_entity, c.temperature_entity, c.humidity_entity, c.pressure_entity, c.indoor_temperature_entity, c.indoor_humidity_entity, 'sun.sun'];
       for (var i = 0; i < ids.length; i++) if (ids[i] && old.states[ids[i]] !== this._hass.states[ids[i]]) return true;
       return langOf(old) !== langOf(this._hass);
     }
@@ -762,6 +878,9 @@
         '<div class="sec" id="secw"><i id="bar"></i></div>' +
         (fc ? '<div class="fc" id="fc"><div class="msg">' + esc(tr(langOf(this._hass), 'loading')) + '</div></div>' : '') +
         '<div class="attr" id="attr" hidden>MET Norway</div>' +
+        '<div class="pmodal" id="pmodal" hidden><div class="pbox"><div class="phead"><div class="ptitle" id="ptitle"></div>' +
+        '<button class="pclose" id="pclose" type="button" aria-label="Close">×</button></div>' +
+        '<div class="pstats" id="pstats"></div><div id="pchart"></div></div></div>' +
         '</ha-card>';
       this._built = true;
       this._bindActions();
@@ -870,6 +989,7 @@
       function clear() { clearTimeout(timer); card.classList.remove('pressed'); }
       card.addEventListener('pointerdown', function (e) {
         if (e.button) return;
+        if (e.target && e.target.closest && e.target.closest('[data-press], #pmodal')) return;
         down = true; held = false; sx = e.clientX; sy = e.clientY;
         if (self._actionOf('tap') || self._actionOf('hold')) card.classList.add('pressed');
         if (self._actionOf('hold')) timer = setTimeout(function () { if (!down) return; held = true; clear(); self._fireAction('hold'); }, 500);
@@ -891,6 +1011,43 @@
       card.addEventListener('pointercancel', function () { down = false; clear(); });
       card.addEventListener('pointerleave', function () { if (down) { down = false; clear(); } });
       card.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && self._actionOf('tap')) { e.preventDefault(); self._fireAction('tap'); } });
+      card.addEventListener('click', function (e) {
+        if (e.target && e.target.closest && e.target.closest('[data-press]')) {
+          e.stopPropagation();
+          self._openPressModal();
+        }
+      });
+      var pm = this._$('pmodal'), pc = this._$('pclose');
+      if (pm) pm.addEventListener('click', function (e) { if (e.target === pm) pm.hidden = true; });
+      if (pc) pc.addEventListener('click', function () { if (pm) pm.hidden = true; });
+    }
+    _openPressModal() {
+      var c = this._config, h = this._hass, pm = this._$('pmodal');
+      if (!c.pressure_entity || !pm) return;
+      var l = langOf(h), ps = st(h, c.pressure_entity);
+      var pv = ps ? num(ps.state) : null, pu = (ps && ps.attributes && ps.attributes.unit_of_measurement) || 'hPa';
+      var name = (ps && ps.attributes && ps.attributes.friendly_name) || (baseLang(l) === 'de' ? 'Luftdruck (7 Tage)' : 'Pressure (7 days)');
+      var pt = pressTrend(pv, this._pressOld, pu);
+      var pTxt = pv != null ? ((/inhg/i.test(pu) ? fmt(pv, 2, l) : Math.round(pv)) + ' ' + pu) : '—';
+      this._$('ptitle').innerHTML = '<ha-icon icon="mdi:gauge"></ha-icon>' + esc(name) + ' · ' + esc(pTxt);
+      this._$('pstats').textContent = pt ? ('Trend (3h): ' + (pt.delta >= 0 ? '+' : '') + fmt(pt.delta, 1, l) + ' ' + pu) : '';
+      this._$('pchart').innerHTML = '<div class="msg">' + esc(tr(l, 'loading')) + '</div>';
+      pm.hidden = false;
+      var self = this;
+      pressHistory7d(h, c.pressure_entity).then(function (pts) {
+        if (!self._built || pm.hidden) return;
+        if (!pts.length) {
+          self._$('pchart').innerHTML = '<div class="msg">' + esc(tr(l, 'nofc')) + '</div>';
+          return;
+        }
+        var vals = pts.map(function (p) { return p.v; });
+        var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+        var f = function (v) { return (/inhg/i.test(pu) ? fmt(v, 2, l) : Math.round(v)) + ' ' + pu; };
+        var stParts = ['7d Min: ' + f(lo), 'Max: ' + f(hi)];
+        if (pt) stParts.push('3h: ' + (pt.delta >= 0 ? '+' : '') + fmt(pt.delta, 1, l) + ' ' + pu);
+        self._$('pstats').textContent = stParts.join('  ·  ');
+        self._$('pchart').innerHTML = pressChartSvg(pts, pu, l);
+      });
     }
 
     /* ---------- timers and data */
@@ -936,12 +1093,14 @@
       }
       if (c.weather_source === 'met_no') this._loadMet();
       if (c.calendar_entity) this._loadCal();
+      if (c.pressure_entity) this._loadPress();
     }
     _slow() {
       var c = this._config, now = new Date(), k = dayKey(now), hr = now.getHours();
       if (c.weather_source === 'met_no') this._loadMet();
       else if (this._usedMet) this._complete();
       if (c.calendar_entity) this._loadCal();
+      if (c.pressure_entity) this._loadPress();
       if (this._day && this._day !== k) { this._fkey = null; this._tkey = null; this._ckey = null; this._renderForecast(); this._renderToday(); this._update(); }
       else if (this._lastHour != null && this._lastHour !== hr) { this._tkey = null; this._renderToday(); }
       this._day = k; this._lastHour = hr;
@@ -981,6 +1140,13 @@
         var items = calItems(ev, c, langOf(self._hass)), key = JSON.stringify(items);
         if (key === self._ckey) return;
         self._ckey = key; self._cal = items; self._renderChips();
+      });
+    }
+    _loadPress() {
+      var self = this, c = this._config;
+      pressFetch(this._hass, c.pressure_entity).then(function (v) {
+        if (!self._built || v === self._pressOld) return;
+        self._pressOld = v; self._weather();
       });
     }
 
@@ -1088,12 +1254,25 @@
       var det = [];
       if (wx && c.show_details !== false) {
         if (cur.today && cur.today.temperature != null) {
-          det.push(['mdi:thermometer', fmt(cur.today.temperature, 0, l) + '° / ' + fmt(cur.today.templow != null ? cur.today.templow : cur.today.temperature, 0, l) + '°']);
+          det.push({ icon: 'mdi:thermometer', text: fmt(cur.today.temperature, 0, l) + '° / ' + fmt(cur.today.templow != null ? cur.today.templow : cur.today.temperature, 0, l) + '°' });
         }
-        if (cur.hum != null) det.push(['mdi:water-percent', fmt(cur.hum, 0, l) + '%']);
-        if (cur.wind != null) det.push(['mdi:weather-windy', fmt(cur.wind, 0, l) + (cur.windUnit ? ' ' + cur.windUnit : '')]);
+        if (cur.hum != null) det.push({ icon: 'mdi:water-percent', text: fmt(cur.hum, 0, l) + '%' });
+        if (cur.wind != null) det.push({ icon: 'mdi:weather-windy', text: fmt(cur.wind, 0, l) + (cur.windUnit ? ' ' + cur.windUnit : '') });
       }
-      this._$('wd').innerHTML = det.map(function (d) { return '<span class="chip"><ha-icon icon="' + d[0] + '"></ha-icon>' + esc(d[1]) + '</span>'; }).join('');
+      if (c.pressure_entity) {
+        var ps = st(h, c.pressure_entity), pv = ps ? num(ps.state) : null;
+        if (pv != null) {
+          var pu = (ps.attributes && ps.attributes.unit_of_measurement) || 'hPa';
+          var pt = pressTrend(pv, this._pressOld, pu);
+          var pTxt = (/inhg/i.test(pu) ? fmt(pv, 2, l) : Math.round(pv)) + ' ' + pu;
+          var pTip = pt ? '3h: ' + (pt.delta >= 0 ? '+' : '') + fmt(pt.delta, 1, l) + ' ' + pu : '';
+          det.push({ icon: 'mdi:gauge', text: pTxt, trend: pt, tip: pTip, press: true });
+        }
+      }
+      this._$('wd').innerHTML = det.map(function (d) {
+        var trHtml = d.trend ? '<ha-icon class="tr ' + d.trend.cls + '" icon="' + d.trend.icon + '"></ha-icon>' : '';
+        return '<span class="chip' + (d.press ? ' press' : '') + '"' + (d.press ? ' data-press="1"' : '') + (d.tip ? ' title="' + esc(d.tip) + '"' : '') + '><ha-icon icon="' + d.icon + '"></ha-icon>' + esc(d.text) + trHtml + '</span>';
+      }).join('');
       this._$('attr').hidden = !this._usedMet;
     }
 
@@ -1193,7 +1372,7 @@
       weather_entity: 'Weather entity', location: 'Place for the forecast', location_h: 'Drag the marker. If you do not set it, your home location is used.',
       location_name: 'Place name (optional)', location_name_h: 'Shown before the weather condition, e.g. “Milan”.',
       complete_forecast: 'Complete missing days with Met.no', complete_forecast_h: 'Some integrations give only 5 days. Your browser asks api.met.no for the place above, rounded to about 1 km.',
-      temperature_entity: 'Outdoor temperature sensor (optional)', humidity_entity: 'Outdoor humidity sensor (optional)',
+      temperature_entity: 'Outdoor temperature sensor (optional)', humidity_entity: 'Outdoor humidity sensor (optional)', pressure_entity: 'Barometric pressure sensor (optional)',
       indoor_temperature_entity: 'Indoor temperature sensor (optional)', indoor_humidity_entity: 'Indoor humidity sensor (optional)', indoor_label: 'Indoor caption', indoor_label_h: 'Default: “Indoor”, in your language.',
       show_details: 'Show high / low, humidity and wind', temperature_decimals: 'Temperature decimals',
       show_today_forecast: 'Show today’s day parts above clock', today_forecast_details: 'Show extra details (rain, wind, feels like, humidity, pressure)',
@@ -1221,7 +1400,7 @@
       weather_entity: 'Entità meteo', location: 'Posto per le previsioni', location_h: 'Sposta il segnaposto. Se non lo imposti si usa la posizione di casa.',
       location_name: 'Nome del posto (facoltativo)', location_name_h: 'Compare prima della condizione meteo, per esempio “Milano”.',
       complete_forecast: 'Completa i giorni mancanti con Met.no', complete_forecast_h: 'Alcune integrazioni danno solo 5 giorni. Il browser chiede ad api.met.no le previsioni del posto qui sopra, arrotondato a circa 1 km.',
-      temperature_entity: 'Sensore temperatura esterna (facoltativo)', humidity_entity: 'Sensore umidità esterna (facoltativo)',
+      temperature_entity: 'Sensore temperatura esterna (facoltativo)', humidity_entity: 'Sensore umidità esterna (facoltativo)', pressure_entity: 'Sensore pressione atmosferica (facoltativo)',
       indoor_temperature_entity: 'Sensore temperatura in casa (facoltativo)', indoor_humidity_entity: 'Sensore umidità in casa (facoltativo)', indoor_label: 'Didascalia della temperatura in casa', indoor_label_h: 'Se vuota: “In casa”.',
       show_details: 'Mostra massima / minima, umidità e vento', temperature_decimals: 'Decimali della temperatura',
       show_today_forecast: 'Mostra le fasce orarie di oggi sopra l’orologio', today_forecast_details: 'Mostra dettagli extra (pioggia, vento, percepita, umidità, pressione)',
@@ -1249,7 +1428,7 @@
       weather_entity: 'Wetter-Entität', location: 'Ort für die Vorhersage', location_h: 'Marker verschieben. Ohne Auswahl wird der Home-Standort verwendet.',
       location_name: 'Ortsname (optional)', location_name_h: 'Wird vor der Wetterlage angezeigt, z. B. „Hintersudberg“.',
       complete_forecast: 'Fehlende Tage mit Met.no ergänzen', complete_forecast_h: 'Einige Integrationen liefern nur 5 Tage. Der Browser fragt api.met.no für den Ort ab.',
-      temperature_entity: 'Außentemperatur-Sensor (optional)', humidity_entity: 'Außenluftfeuchte-Sensor (optional)',
+      temperature_entity: 'Außentemperatur-Sensor (optional)', humidity_entity: 'Außenluftfeuchte-Sensor (optional)', pressure_entity: 'Luftdruck-Sensor (optional, mit Trend & 7-Tage-Verlauf)',
       indoor_temperature_entity: 'Innentemperatur-Sensor (optional)', indoor_humidity_entity: 'Innenluftfeuchte-Sensor (optional)', indoor_label: 'Beschriftung Innen', indoor_label_h: 'Standard: „Innen“.',
       show_details: 'Max / Min, Luftfeuchte und Wind anzeigen', temperature_decimals: 'Nachkommastellen Temperatur',
       show_today_forecast: 'Tagesabschnitte (Heute) oberhalb der Uhr anzeigen', today_forecast_details: 'Zusätzliche Details anzeigen (Regen, Wind, Gefühlt, Feuchte, Druck)',
@@ -1347,6 +1526,7 @@
         weather.push({ name: 'temperature_entity', selector: { entity: { filter: { domain: 'sensor', device_class: 'temperature' } } } });
         weather.push({ name: 'humidity_entity', selector: { entity: { filter: { domain: 'sensor', device_class: 'humidity' } } } });
       }
+      weather.push({ name: 'pressure_entity', selector: { entity: { filter: { domain: 'sensor', device_class: ['atmospheric_pressure', 'pressure'] } } } });
       weather.push({ name: 'indoor_temperature_entity', selector: { entity: { filter: { domain: 'sensor', device_class: 'temperature' } } } });
       if (c.indoor_temperature_entity) {
         weather.push({ name: 'indoor_humidity_entity', selector: { entity: { filter: { domain: 'sensor', device_class: 'humidity' } } } });

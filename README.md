@@ -108,6 +108,7 @@ tap_action:
 | `complete_forecast` | boolean | `false` | With a weather entity: fill the missing days with Met.no. |
 | `temperature_entity` | entity | | Outdoor temperature sensor, replaces the temperature of the weather. |
 | `humidity_entity` | entity | | Outdoor humidity sensor. |
+| `pressure_entity` | entity | | Barometric pressure sensor (e.g. relative pressure). Shows current hPa + 3-hour trend arrow; tap to open a 7-day history chart. |
 | `indoor_temperature_entity` | entity | | Indoor temperature, shown next to the outdoor one. |
 | `indoor_humidity_entity` | entity | | Indoor humidity, shown next to the indoor caption (e.g. `Indoor · 48%`). |
 | `indoor_label` | text | `Indoor`, translated | Caption under the indoor temperature. |
